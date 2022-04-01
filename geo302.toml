@@ -1,0 +1,20 @@
+geolite2 = "./GeoLite2-Country_20220329/GeoLite2-Country.mmdb"
+host = "0.0.0.0:8000"
+
+[mirrors.sai]
+upstream = "https://fits.ztf.snad.space/"
+healthcheck = "https://fits.ztf.snad.space/products/"
+
+[mirrors.irsa]
+upstream = "https://irsa.ipac.caltech.edu/ibe/data/ztf/"
+healthcheck = "https://irsa.ipac.caltech.edu/ibe/data/ztf/products/"
+
+[continents]
+Africa = ["irsa", "sai"]
+Asia = ["sai", "irsa"]
+Europe = ["sai", "irsa"]
+NorthAmerica = ["irsa", "sai"]
+Oceania = ["irsa", "sai"]
+SouthAmerica = ["irsa", "sai"]
+Antarctica = ["irsa", "sai"]
+default = ["irsa", "sai"]
