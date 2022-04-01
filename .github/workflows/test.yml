@@ -1,0 +1,31 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  rust:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Check
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+        args: --all-targets
+    - name: Check formatting
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: -- --check
+    - name: Run code analysis
+      uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: --all-targets -- -D warnings
