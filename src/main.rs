@@ -21,7 +21,7 @@ impl warp::reject::Reject for MirrorsUnavailable {}
 async fn handle_rejection(
     err: warp::Rejection,
 ) -> Result<impl warp::Reply, std::convert::Infallible> {
-    if let Some(_) = err.find::<MirrorsUnavailable>() {
+    if err.find::<MirrorsUnavailable>().is_some() {
         Ok(warp::reply::with_status(
             "SERVICE_UNAVAILABLE",
             StatusCode::SERVICE_UNAVAILABLE,

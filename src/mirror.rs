@@ -46,14 +46,14 @@ impl ContinentMap {
             .ok_or(ConfigError::NoDefaultContinent)?;
         Ok(Self(
             conf_continents
-                .into_iter()
+                .iter()
                 .map(|(continent_string, mirror_strings)| {
                     let continent = continent_string
                         .as_str()
                         .try_into()
                         .map_err(|_| ConfigError::ContinentUnknown(continent_string.to_owned()))?;
                     let mirrors = mirror_strings
-                        .into_iter()
+                        .iter()
                         .map(|s| {
                             conf_mirrors
                                 .get(s)

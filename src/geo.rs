@@ -51,17 +51,17 @@ impl<'a> TryFrom<&'a str> for Continent {
     }
 }
 
-impl Into<&'static str> for Continent {
-    fn into(self) -> &'static str {
-        match self {
-            Self::Africa => "Africa",
-            Self::Asia => "Asia",
-            Self::Europe => "Europe",
-            Self::NorthAmerica => "North America",
-            Self::Oceania => "Oceania",
-            Self::SouthAmerica => "South America",
-            Self::Antarctica => "Antarctica",
-            Self::Default => "default",
+impl From<Continent> for &'static str {
+    fn from(continent: Continent) -> Self {
+        match continent {
+            Continent::Africa => "Africa",
+            Continent::Asia => "Asia",
+            Continent::Europe => "Europe",
+            Continent::NorthAmerica => "North America",
+            Continent::Oceania => "Oceania",
+            Continent::SouthAmerica => "South America",
+            Continent::Antarctica => "Antarctica",
+            Continent::Default => "default",
         }
     }
 }
