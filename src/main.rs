@@ -65,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
         .and_then(
             |mirrors: MirrorVec, path: FullPath, client: Client| async move {
                 let mirror = {
-                    let mut it_mirrors = mirrors.into_iter();
+                    let mut it_mirrors = mirrors.iter();
                     loop {
                         match it_mirrors.next() {
                             Some(mirror) => {

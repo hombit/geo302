@@ -3,6 +3,7 @@ use crate::geo::Continent;
 use serde::Deserialize;
 use smallvec::SmallVec;
 use std::collections::HashMap;
+use std::sync::Arc;
 use url::Url;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -29,7 +30,7 @@ impl TryFrom<MirrorConfig> for Mirror {
     }
 }
 
-pub type MirrorVec = SmallVec<[Mirror; 2]>;
+pub type MirrorVec = Arc<SmallVec<[Mirror; 2]>>;
 
 #[derive(Debug, Clone)]
 pub struct ContinentMap(HashMap<Continent, MirrorVec>);
@@ -52,18 +53,20 @@ impl ContinentMap {
                         .as_str()
                         .try_into()
                         .map_err(|_| ConfigError::ContinentUnknown(continent_string.to_owned()))?;
-                    let mirrors = mirror_strings
-                        .iter()
-                        .map(|s| {
-                            conf_mirrors
-                                .get(s)
-                                .ok_or_else(|| ConfigError::UnknwonMirror {
-                                    continent,
-                                    mirror: s.to_owned(),
-                                })
-                                .cloned()
-                        })
-                        .collect::<Result<MirrorVec, ConfigError>>()?;
+                    let mirrors = Arc::new(
+                        mirror_strings
+                            .iter()
+                            .map(|s| {
+                                conf_mirrors
+                                    .get(s)
+                                    .ok_or_else(|| ConfigError::UnknwonMirror {
+                                        continent,
+                                        mirror: s.to_owned(),
+                                    })
+                                    .cloned()
+                            })
+                            .collect::<Result<_, ConfigError>>()?,
+                    );
                     Ok((continent, mirrors))
                 })
                 .collect::<Result<HashMap<Continent, MirrorVec>, ConfigError>>()?,
