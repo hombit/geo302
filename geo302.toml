@@ -1,5 +1,7 @@
 geolite2 = "./GeoLite2-Country_20220329/GeoLite2-Country.mmdb"
 host = "0.0.0.0:8000"
+ip_headers = ["x-real-ip", "x-forwarded-for"]
+ip_header_recursive = true
 
 [mirrors.sai]
 upstream = "https://fits.ztf.snad.space/"

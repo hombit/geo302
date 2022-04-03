@@ -3,9 +3,9 @@ use crate::geo::{Continent, Geo};
 use crate::mirror::{ContinentMap, Mirror, MirrorVec};
 use reqwest::Client;
 use reqwest::StatusCode;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
-use warp::http::Uri;
+use warp::http::{HeaderMap, Uri};
 use warp::path::FullPath;
 use warp::Filter;
 
@@ -43,25 +43,54 @@ async fn main() -> anyhow::Result<()> {
 
     let config = parse_config(config_path)?;
     let host: SocketAddr = config.host.parse()?;
+    let ip_header_recursive = config.ip_headers_recursive;
     let continent_map = ContinentMap::from_config(&config)?;
     let geo = Arc::new(Geo::from_config(&config)?);
+    let ip_header_names = config.ip_headers;
 
-    let client = Client::new();
-    let client_filter = warp::any().map(move || client.clone());
+    let http_client = Client::new();
+    let http_client_filter = warp::any().map(move || http_client.clone());
+
+    let client_ip_filter = {
+        warp::header::headers_cloned()
+            .and(warp::filters::addr::remote())
+            .map(move |headers: HeaderMap, socket_addr: Option<SocketAddr>| {
+                ip_header_names
+                    .iter()
+                    .filter_map(|name| {
+                        let values = headers.get_all(name);
+                        let mut it_values = values.iter();
+                        if ip_header_recursive {
+                            it_values.next()
+                        } else {
+                            it_values.next_back()
+                        }
+                    })
+                    .next()
+                    .and_then(|value| {
+                        let value = value.to_str().ok()?;
+                        let mut split = value.split(',');
+                        if ip_header_recursive {
+                            split.next()
+                        } else {
+                            split.next_back()
+                        }
+                    })
+                    .and_then(|s| s.parse::<IpAddr>().ok())
+                    .or_else(|| socket_addr.as_ref().map(SocketAddr::ip))
+            })
+    };
+
     let routes = warp::get()
-        .and(warp::filters::addr::remote())
-        .map(move |addr: Option<SocketAddr>| {
-            let ip = match addr {
-                Some(addr) => addr.ip(),
-                None => return continent_map.get_default(),
-            };
-            match geo.try_lookup_continent(ip) {
-                Ok(continent) => continent_map.get(continent),
-                Err(_) => continent_map.get_default(),
-            }
-        })
+        .and(client_ip_filter)
+        .map(
+            move |ip: Option<IpAddr>| match ip.and_then(|ip| geo.try_lookup_continent(ip).ok()) {
+                Some(continent) => continent_map.get(continent),
+                None => continent_map.get_default(),
+            },
+        )
         .and(warp::path::full())
-        .and(client_filter)
+        .and(http_client_filter)
         .and_then(
             |mirrors: MirrorVec, path: FullPath, client: Client| async move {
                 let mirror = {

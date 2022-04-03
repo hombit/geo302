@@ -19,10 +19,29 @@ pub enum ConfigError {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    #[serde(default = "Config::default_host")]
     pub host: String,
+    #[serde(default = "Config::default_ip_headers")]
+    pub ip_headers: Vec<String>,
+    #[serde(default = "Config::default_ip_headers_recursive")]
+    pub ip_headers_recursive: bool,
     pub geolite2: String,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
+}
+
+impl Config {
+    fn default_host() -> String {
+        "127.0.0.1:8080".into()
+    }
+
+    fn default_ip_headers() -> Vec<String> {
+        vec!["X-FORWARDED-FOR".into()]
+    }
+
+    fn default_ip_headers_recursive() -> bool {
+        true
+    }
 }
 
 pub fn parse_config<P: AsRef<Path>>(path: P) -> anyhow::Result<Config> {
