@@ -2,6 +2,12 @@
 name = "geo302"
 version = "0.1.0"
 edition = "2021"
+description = "A simple geoIP-based redirect proxy"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/hombit/geo302"
+keywords = ["geoIP", "http-proxy"]
+categories = ["web-programming::http-server"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,4 +22,4 @@ smallvec = { version = "1.8", default_features = false, features = ["union"]}
 thiserror = "1.0"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 url = "2.2"
-warp = { version = "0.3.2", default_features = false }
+warp = { version = "0.3", default_features = false }
