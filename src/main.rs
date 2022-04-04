@@ -4,7 +4,10 @@ use crate::mirror::{ContinentMap, Mirror, MirrorVec};
 use reqwest::Client;
 use reqwest::StatusCode;
 use std::net::{IpAddr, SocketAddr};
+use std::sync::atomic;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Duration;
 use warp::http::{HeaderMap, Uri};
 use warp::path::FullPath;
 use warp::Filter;
@@ -48,9 +51,6 @@ async fn main() -> anyhow::Result<()> {
     let geo = Arc::new(Geo::from_config(&config)?);
     let ip_header_names = config.ip_headers;
 
-    let http_client = Client::new();
-    let http_client_filter = warp::any().map(move || http_client.clone());
-
     let client_ip_filter = {
         warp::header::headers_cloned()
             .and(warp::filters::addr::remote())
@@ -81,6 +81,25 @@ async fn main() -> anyhow::Result<()> {
             })
     };
 
+    let http_client = Client::new();
+    for mirror in continent_map.all_mirrors() {
+        let available = Arc::clone(&mirror.available);
+        let healthcheck_url = mirror.healthcheck.clone();
+        let http_client = http_client.clone();
+        let sleep_duration = Duration::new(config.healthckeck_interval.get().into(), 0);
+        tokio::spawn(async move {
+            loop {
+                let status = http_client
+                    .get(healthcheck_url.clone())
+                    .send()
+                    .await
+                    .is_ok();
+                available.store(status, atomic::Ordering::Relaxed);
+                tokio::time::sleep(sleep_duration).await;
+            }
+        });
+    }
+
     let routes = warp::get()
         .and(client_ip_filter)
         .map(
@@ -90,33 +109,26 @@ async fn main() -> anyhow::Result<()> {
             },
         )
         .and(warp::path::full())
-        .and(http_client_filter)
-        .and_then(
-            |mirrors: MirrorVec, path: FullPath, client: Client| async move {
-                let mirror = {
-                    let mut it_mirrors = mirrors.iter();
-                    loop {
-                        match it_mirrors.next() {
-                            Some(mirror) => {
-                                if let Ok(response) =
-                                    client.get(mirror.healthcheck.clone()).send().await
-                                {
-                                    if response.status() == StatusCode::OK {
-                                        break mirror;
-                                    }
-                                }
+        .and_then(|mirrors: MirrorVec, path: FullPath| async move {
+            let mirror = {
+                let mut it_mirrors = mirrors.iter();
+                loop {
+                    match it_mirrors.next() {
+                        Some(mirror) => {
+                            if mirror.available.load(Ordering::Relaxed) {
+                                break mirror;
                             }
-                            None => return Err(warp::reject::custom(MirrorsUnavailable)),
                         }
+                        None => return Err(warp::reject::custom(MirrorsUnavailable)),
                     }
-                };
-                let url = mirror
-                    .upstream
-                    .join(path.as_str().trim_start_matches('/'))
-                    .unwrap();
-                Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()))
-            },
-        )
+                }
+            };
+            let url = mirror
+                .upstream
+                .join(path.as_str().trim_start_matches('/'))
+                .unwrap();
+            Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()))
+        })
         .recover(handle_rejection);
 
     warp::serve(routes).run(host).await;

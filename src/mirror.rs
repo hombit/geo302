@@ -3,6 +3,7 @@ use crate::geo::Continent;
 use serde::Deserialize;
 use smallvec::SmallVec;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use url::Url;
 
@@ -11,6 +12,7 @@ use url::Url;
 pub struct Mirror {
     pub upstream: Url,
     pub healthcheck: Url,
+    pub available: Arc<AtomicBool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,6 +28,7 @@ impl TryFrom<MirrorConfig> for Mirror {
         Ok(Self {
             upstream: value.upstream.as_str().try_into()?,
             healthcheck: value.healthcheck.as_str().try_into()?,
+            available: Arc::new(AtomicBool::new(false)),
         })
     }
 }
@@ -33,7 +36,10 @@ impl TryFrom<MirrorConfig> for Mirror {
 pub type MirrorVec = Arc<SmallVec<[Mirror; 2]>>;
 
 #[derive(Debug, Clone)]
-pub struct ContinentMap(HashMap<Continent, MirrorVec>);
+pub struct ContinentMap {
+    map: HashMap<Continent, MirrorVec>,
+    mirrors: Vec<Mirror>,
+}
 
 impl ContinentMap {
     pub fn from_config(config: &Config) -> Result<Self, ConfigError> {
@@ -45,8 +51,9 @@ impl ContinentMap {
         conf_continents
             .get("default")
             .ok_or(ConfigError::NoDefaultContinent)?;
-        Ok(Self(
-            conf_continents
+        Ok(Self {
+            mirrors: conf_mirrors.values().cloned().collect(),
+            map: conf_continents
                 .iter()
                 .map(|(continent_string, mirror_strings)| {
                     let continent = continent_string
@@ -70,17 +77,21 @@ impl ContinentMap {
                     Ok((continent, mirrors))
                 })
                 .collect::<Result<HashMap<Continent, MirrorVec>, ConfigError>>()?,
-        ))
+        })
     }
 
     pub fn get(&self, continent: Continent) -> MirrorVec {
-        self.0
+        self.map
             .get(&continent)
             .cloned()
             .unwrap_or_else(|| self.get_default())
     }
 
     pub fn get_default(&self) -> MirrorVec {
-        self.0.get(&Continent::Default).unwrap().clone()
+        self.map.get(&Continent::Default).unwrap().clone()
+    }
+
+    pub fn all_mirrors(&self) -> &[Mirror] {
+        &self.mirrors
     }
 }

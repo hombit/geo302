@@ -1,6 +1,7 @@
 use crate::{Continent, Mirror};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::num::NonZeroU16;
 use std::path::Path;
 use thiserror::Error;
 
@@ -25,6 +26,8 @@ pub struct Config {
     pub ip_headers: Vec<String>,
     #[serde(default = "Config::default_ip_headers_recursive")]
     pub ip_headers_recursive: bool,
+    #[serde(default = "Config::default_healthcheck_interval")]
+    pub healthckeck_interval: NonZeroU16,
     pub geolite2: String,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
@@ -41,6 +44,10 @@ impl Config {
 
     fn default_ip_headers_recursive() -> bool {
         true
+    }
+
+    fn default_healthcheck_interval() -> NonZeroU16 {
+        5.try_into().unwrap()
     }
 }
 
