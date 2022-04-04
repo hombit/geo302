@@ -2,7 +2,7 @@ use crate::config::parse_config;
 use crate::geo::{Continent, Geo};
 use crate::healthcheck::check_health;
 use crate::mirror::{ContinentMap, Mirror, MirrorVec};
-use crate::rejects::{handle_rejection, MirrorsUnavailable};
+use crate::rejects::{handle_rejection, BrokenPath, MirrorsUnavailable};
 use filters::client_ip_filter;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::Ordering;
@@ -61,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
             let url = mirror
                 .upstream
                 .join(path.as_str().trim_start_matches('/'))
-                .unwrap();
+                .map_err(|_| warp::reject::custom(BrokenPath))?;
             Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()))
         })
         .recover(handle_rejection);
