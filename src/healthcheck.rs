@@ -16,7 +16,7 @@ pub fn check_health(mirrors: &[Mirror], interval: Duration) {
                     .send()
                     .await
                     .is_ok();
-                available.store(status, atomic::Ordering::Relaxed);
+                available.store(status, atomic::Ordering::Release);
                 tokio::time::sleep(interval).await;
             }
         });

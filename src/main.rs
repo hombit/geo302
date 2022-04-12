@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
                 loop {
                     match it_mirrors.next() {
                         Some(mirror) => {
-                            if mirror.available.load(Ordering::Relaxed) {
+                            if mirror.available.load(Ordering::Acquire) {
                                 break mirror;
                             }
                         }
