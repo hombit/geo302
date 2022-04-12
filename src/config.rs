@@ -5,17 +5,19 @@ use std::num::NonZeroU16;
 use std::path::Path;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ConfigError {
     #[error(r#"continents must contain "default""#)]
     NoDefaultContinent,
     #[error(r#"continent {continent:?} mention unknown mirror {mirror}"#)]
-    UnknwonMirror {
+    MirrorUnknown {
         continent: Continent,
         mirror: String,
     },
     #[error(r#"continent {0} is not supported, connect Earth goverment to fix it"#)]
     ContinentUnknown(String),
+    #[error(r#"no mirrors are specified"#)]
+    NoMirrors,
 }
 
 #[derive(Debug, Deserialize)]

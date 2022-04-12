@@ -48,9 +48,15 @@ impl ContinentMap {
             continents: conf_continents,
             ..
         } = config;
+
         conf_continents
             .get("default")
             .ok_or(ConfigError::NoDefaultContinent)?;
+
+        if conf_mirrors.is_empty() {
+            return Err(ConfigError::NoMirrors);
+        }
+
         Ok(Self {
             mirrors: conf_mirrors.values().cloned().collect(),
             map: conf_continents
@@ -66,7 +72,7 @@ impl ContinentMap {
                             .map(|s| {
                                 conf_mirrors
                                     .get(s)
-                                    .ok_or_else(|| ConfigError::UnknwonMirror {
+                                    .ok_or_else(|| ConfigError::MirrorUnknown {
                                         continent,
                                         mirror: s.to_owned(),
                                     })
@@ -93,5 +99,112 @@ impl ContinentMap {
 
     pub fn all_mirrors(&self) -> &[Mirror] {
         &self.mirrors
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_config() {
+        let s = r#"
+        geolite2 = ""
+        
+        [mirrors]
+        
+        [continents]
+        "#;
+        let config: Config = toml::from_str(s).unwrap();
+        assert!(ContinentMap::from_config(&config).is_err());
+    }
+
+    #[test]
+    fn empty_continents() {
+        let s = r#"
+        geolite2 = ""
+        
+        [mirrors]
+        mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
+        
+        [continents]
+        "#;
+        let config: Config = toml::from_str(s).unwrap();
+        assert_eq!(
+            ContinentMap::from_config(&config).unwrap_err(),
+            ConfigError::NoDefaultContinent
+        );
+    }
+
+    #[test]
+    fn empty_mirrors() {
+        let s = r#"
+        geolite2 = ""
+        
+        [mirrors]
+        
+        [continents]
+        default = []
+        "#;
+        let config: Config = toml::from_str(s).unwrap();
+        assert_eq!(
+            ContinentMap::from_config(&config).unwrap_err(),
+            ConfigError::NoMirrors
+        );
+    }
+
+    #[test]
+    fn no_default_continent() {
+        let s = r#"
+        geolite2 = ""
+        
+        [mirrors]
+        mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
+        
+        [continents]
+        Europe = ["mirror"]
+        "#;
+        let config: Config = toml::from_str(s).unwrap();
+        assert_eq!(
+            ContinentMap::from_config(&config).unwrap_err(),
+            ConfigError::NoDefaultContinent
+        );
+    }
+
+    #[test]
+    fn wrong_mirror() {
+        let s = r#"
+        geolite2 = ""
+        
+        [mirrors]
+        mirror1 = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
+        
+        [continents]
+        default = ["mirror2"]
+        "#;
+        let config: Config = toml::from_str(s).unwrap();
+        assert!(matches!(
+            ContinentMap::from_config(&config).unwrap_err(),
+            ConfigError::MirrorUnknown { .. }
+        ));
+    }
+
+    #[test]
+    fn wrong_continent_name() {
+        let s = r#"
+        geolite2 = ""
+        
+        [mirrors]
+        mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
+        
+        [continents]
+        default = ["mirror"]
+        Zeus = ["mirror"]
+        "#;
+        let config: Config = toml::from_str(s).unwrap();
+        assert!(matches!(
+            ContinentMap::from_config(&config).unwrap_err(),
+            ConfigError::ContinentUnknown { .. }
+        ));
     }
 }
