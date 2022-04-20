@@ -33,7 +33,7 @@ impl TryFrom<MirrorConfig> for Mirror {
     }
 }
 
-pub type MirrorVec = Arc<SmallVec<[Mirror; 2]>>;
+pub type MirrorVec = Arc<SmallVec<[Mirror; 4]>>;
 
 #[derive(Debug, Clone)]
 pub struct ContinentMap {
