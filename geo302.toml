@@ -5,19 +5,19 @@ ip_header_recursive = true
 healthckeck_interval = 5
 
 [mirrors.sai]
-upstream = "https://fits.ztf.snad.space/"
-healthcheck = "https://fits.ztf.snad.space/products/"
+upstream = "https://sai.fits.ztf.snad.space/"
+healthcheck = "https://sai.fits.ztf.snad.space/products/"
 
-[mirrors.irsa]
-upstream = "https://irsa.ipac.caltech.edu/ibe/data/ztf/"
-healthcheck = "https://irsa.ipac.caltech.edu/ibe/data/ztf/products/"
+[mirrors.uci]
+upstream = "https://uci.fits.ztf.snad.space/"
+healthcheck = "https://uci.fits.ztf.snad.space/products/"
 
 [continents]
-Africa = ["irsa", "sai"]
-Asia = ["sai", "irsa"]
-Europe = ["sai", "irsa"]
-NorthAmerica = ["irsa", "sai"]
-Oceania = ["irsa", "sai"]
-SouthAmerica = ["irsa", "sai"]
-Antarctica = ["irsa", "sai"]
-default = ["irsa", "sai"]
+Africa = ["sai", "uci"]
+Asia = ["sai", "uci"]
+Europe = ["sai", "uci"]
+NorthAmerica = ["uci", "sai"]
+Oceania = ["uci", "sai"]
+SouthAmerica = ["uci", "sai"]
+Antarctica = ["uci", "sai"]
+default = ["sai", "uci"]
