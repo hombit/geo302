@@ -15,8 +15,14 @@ pub fn check_health(mirrors: &[Mirror], interval: Duration) {
                     .get(healthcheck_url.clone())
                     .send()
                     .await
-                    .is_ok();
-                available.store(status, atomic::Ordering::Release);
+                    .map(|response| response.error_for_status());
+                available.store(status.is_ok(), atomic::Ordering::Release);
+                match status {
+                    Ok(_) => log::info!("{} is alive", healthcheck_url),
+                    Err(e) => {
+                        log::warn!("{} is unavailable: {}", healthcheck_url, e.to_string())
+                    }
+                }
                 tokio::time::sleep(interval).await;
             }
         });

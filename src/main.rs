@@ -33,7 +33,20 @@ async fn main() -> anyhow::Result<()> {
     let check_interval = Duration::new(config.healthckeck_interval.get().into(), 0);
     let ip_header_names = config.ip_headers;
 
+    simple_logger::init_with_level(config.log_level)?;
+
     check_health(continent_map.all_mirrors(), check_interval);
+
+    let logs = warp::log::custom(|info| {
+        log::info!(
+            "{} {} {} {}",
+            info.remote_addr()
+                .map_or_else(|| "_".into(), |addr| format!("{}", addr.ip())),
+            info.method(),
+            info.path(),
+            info.status(),
+        )
+    });
 
     let routes = warp::get()
         .and(client_ip_filter(ip_header_names, ip_header_recursive))
@@ -64,7 +77,8 @@ async fn main() -> anyhow::Result<()> {
                 .map_err(|_| warp::reject::custom(BrokenPath))?;
             Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()))
         })
-        .recover(handle_rejection);
+        .recover(handle_rejection)
+        .with(logs);
 
     warp::serve(routes).run(host).await;
     Ok(())

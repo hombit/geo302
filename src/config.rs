@@ -20,7 +20,7 @@ pub enum ConfigError {
     NoMirrors,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct Config {
     #[serde(default = "Config::default_host")]
     pub host: String,
@@ -30,6 +30,8 @@ pub struct Config {
     pub ip_headers_recursive: bool,
     #[serde(default = "Config::default_healthcheck_interval")]
     pub healthckeck_interval: NonZeroU16,
+    #[serde(default = "Config::default_log_level")]
+    pub log_level: log::Level,
     pub geolite2: String,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
@@ -50,6 +52,10 @@ impl Config {
 
     fn default_healthcheck_interval() -> NonZeroU16 {
         5.try_into().unwrap()
+    }
+
+    fn default_log_level() -> log::Level {
+        log::Level::Info
     }
 }
 

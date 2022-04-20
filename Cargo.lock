@@ -251,9 +251,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "log",
  "maxminddb",
  "reqwest",
  "serde",
+ "simple_logger",
  "smallvec",
  "thiserror",
  "tokio",
@@ -477,6 +479,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
 dependencies = [
  "cfg-if",
+ "serde",
 ]
 
 [[package]]
@@ -864,6 +867,17 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "simple_logger"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c75a9723083573ace81ad0cdfc50b858aa3c366c48636edb4109d73122a0c0ea"
+dependencies = [
+ "atty",
+ "log",
+ "winapi",
 ]
 
 [[package]]
