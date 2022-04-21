@@ -85,27 +85,38 @@ async fn main() -> anyhow::Result<()> {
             },
         )
         .and(warp::path::full())
-        .and_then(|mirrors: MirrorVec, path: FullPath| async move {
-            let mirror = {
-                let mut it_mirrors = mirrors.iter();
-                loop {
-                    match it_mirrors.next() {
-                        Some(mirror) => {
-                            if mirror.available.load(Ordering::Acquire) {
-                                break mirror;
+        .and(
+            warp::query::raw()
+                .map(Option::Some)
+                .or_else(|_err| async { Ok::<_, warp::Rejection>((None,)) }),
+        )
+        .and_then(
+            |mirrors: MirrorVec, path: FullPath, query: Option<String>| async move {
+                let mirror = {
+                    let mut it_mirrors = mirrors.iter();
+                    loop {
+                        match it_mirrors.next() {
+                            Some(mirror) => {
+                                if mirror.available.load(Ordering::Acquire) {
+                                    break mirror;
+                                }
                             }
+                            None => return Err(warp::reject::custom(MirrorsUnavailable)),
                         }
-                        None => return Err(warp::reject::custom(MirrorsUnavailable)),
                     }
-                }
-            };
-            let url = mirror
-                .upstream
-                .join(path.as_str().trim_start_matches('/'))
-                .map_err(|_| warp::reject::custom(BrokenPath))?;
+                };
+                let url = {
+                    let mut url = mirror
+                        .upstream
+                        .join(path.as_str().trim_start_matches('/'))
+                        .map_err(|_| warp::reject::custom(BrokenPath))?;
+                    url.set_query(query.as_deref());
+                    url
+                };
 
-            Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response())
-        })
+                Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response())
+            },
+        )
         .with(warp::filters::reply::headers(response_headers))
         .recover(handle_rejection)
         .with(logs);
