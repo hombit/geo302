@@ -3,7 +3,7 @@ use std::net::{IpAddr, SocketAddr};
 use warp::http::HeaderMap;
 use warp::Filter;
 
-pub fn client_ip_filter(
+pub fn client_ip(
     header_names: Vec<String>,
     recursive: bool,
 ) -> impl Filter<Extract = (Option<IpAddr>,), Error = Infallible> + Clone + 'static {
@@ -44,7 +44,7 @@ mod tests {
     #[tokio::test]
     async fn client_ip_filter_no_addr() {
         let actual = warp::test::request()
-            .filter(&client_ip_filter(vec![], true))
+            .filter(&client_ip(vec![], true))
             .await
             .unwrap();
         assert_eq!(actual, None);
@@ -55,7 +55,7 @@ mod tests {
         let ip_expected = IpAddr::V4(Ipv4Addr::new(93, 180, 26, 112));
         let actual = warp::test::request()
             .remote_addr(SocketAddr::new(ip_expected, 8001))
-            .filter(&client_ip_filter(vec![], true))
+            .filter(&client_ip(vec![], true))
             .await
             .unwrap();
         assert_eq!(actual, Some(ip_expected));
@@ -68,7 +68,7 @@ mod tests {
         ));
         let actual = warp::test::request()
             .remote_addr(SocketAddr::new(ip_expected, 8001))
-            .filter(&client_ip_filter(vec![], true))
+            .filter(&client_ip(vec![], true))
             .await
             .unwrap();
         assert_eq!(actual, Some(ip_expected));
@@ -84,7 +84,7 @@ mod tests {
             let actual = warp::test::request()
                 .remote_addr(SocketAddr::new(ip_socket, 8001))
                 .header(header, ip_expected.to_string())
-                .filter(&client_ip_filter(vec![header.into()], is_recursive))
+                .filter(&client_ip(vec![header.into()], is_recursive))
                 .await
                 .unwrap();
             assert_eq!(actual, Some(ip_expected));
@@ -103,7 +103,7 @@ mod tests {
             let actual = warp::test::request()
                 .remote_addr(SocketAddr::new(ip_socket, 8001))
                 .header(header_name, &header_value)
-                .filter(&client_ip_filter(vec![header_name.into()], is_recursive))
+                .filter(&client_ip(vec![header_name.into()], is_recursive))
                 .await
                 .unwrap();
             assert_eq!(actual, Some(ip_expected));
@@ -123,7 +123,7 @@ mod tests {
             let actual = warp::test::request()
                 .remote_addr(SocketAddr::new(ip_socket, 8001))
                 .header(header_name, &header_value)
-                .filter(&client_ip_filter(vec![header_name.into()], is_recursive))
+                .filter(&client_ip(vec![header_name.into()], is_recursive))
                 .await
                 .unwrap();
             assert_eq!(actual, Some(ip_expected));
@@ -154,7 +154,7 @@ mod tests {
                 request = request.header(*name, value);
             }
             let actual = request
-                .filter(&client_ip_filter(header_names.clone(), is_recursive))
+                .filter(&client_ip(header_names.clone(), is_recursive))
                 .await
                 .unwrap();
             assert_eq!(actual, Some(ip_expected));

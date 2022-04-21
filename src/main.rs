@@ -1,5 +1,4 @@
 use crate::config::parse_config;
-use crate::filters::client_ip_filter;
 use crate::geo::{Continent, Geo};
 use crate::healthcheck::check_health;
 use crate::mirror::{ContinentMap, Mirror, MirrorVec};
@@ -78,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     let routes = warp::get()
-        .and(client_ip_filter(ip_header_names, ip_header_recursive))
+        .and(filters::client_ip(ip_header_names, ip_header_recursive))
         .map(
             move |ip: Option<IpAddr>| match ip.and_then(|ip| geo.try_lookup_continent(ip).ok()) {
                 Some(continent) => continent_map.get(continent),
