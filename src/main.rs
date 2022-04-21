@@ -1,15 +1,21 @@
 use crate::config::parse_config;
+use crate::filters::{client_ip_filter, dummy_filter};
 use crate::geo::{Continent, Geo};
 use crate::healthcheck::check_health;
 use crate::mirror::{ContinentMap, Mirror, MirrorVec};
 use crate::rejects::{handle_rejection, BrokenPath, MirrorsUnavailable};
-use filters::client_ip_filter;
 use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
+use thiserror::Error;
+use warp::http::header::{
+    HeaderMap, HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue,
+};
 use warp::http::Uri;
 use warp::path::FullPath;
+use warp::reply::Reply;
 use warp::Filter;
 
 mod config;
@@ -18,6 +24,14 @@ mod geo;
 mod healthcheck;
 mod mirror;
 mod rejects;
+
+#[derive(Error, Debug)]
+pub enum HeaderError {
+    #[error("{0}")]
+    InvalidHeaderName(InvalidHeaderName),
+    #[error("{0}")]
+    InvalidHeaderValue(InvalidHeaderValue),
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -32,6 +46,21 @@ async fn main() -> anyhow::Result<()> {
     let geo = Arc::new(Geo::from_config(&config)?);
     let check_interval = Duration::new(config.healthckeck_interval.get().into(), 0);
     let ip_header_names = config.ip_headers;
+    let response_headers = config
+        .response_headers
+        .iter()
+        .map(|(name, value)| {
+            let name = match HeaderName::from_str(name) {
+                Ok(name) => name,
+                Err(err) => return Err(HeaderError::InvalidHeaderName(err)),
+            };
+            let value = match HeaderValue::from_str(value) {
+                Ok(value) => value,
+                Err(err) => return Err(HeaderError::InvalidHeaderValue(err)),
+            };
+            Ok((name, value))
+        })
+        .collect::<Result<HeaderMap, _>>()?;
 
     simple_logger::init_with_level(config.log_level)?;
 
@@ -57,26 +86,36 @@ async fn main() -> anyhow::Result<()> {
             },
         )
         .and(warp::path::full())
-        .and_then(|mirrors: MirrorVec, path: FullPath| async move {
-            let mirror = {
-                let mut it_mirrors = mirrors.iter();
-                loop {
-                    match it_mirrors.next() {
-                        Some(mirror) => {
-                            if mirror.available.load(Ordering::Acquire) {
-                                break mirror;
+        .and(dummy_filter(response_headers))
+        .and_then(
+            |mirrors: MirrorVec, path: FullPath, response_headers: HeaderMap| async move {
+                let mirror = {
+                    let mut it_mirrors = mirrors.iter();
+                    loop {
+                        match it_mirrors.next() {
+                            Some(mirror) => {
+                                if mirror.available.load(Ordering::Acquire) {
+                                    break mirror;
+                                }
                             }
+                            None => return Err(warp::reject::custom(MirrorsUnavailable)),
                         }
-                        None => return Err(warp::reject::custom(MirrorsUnavailable)),
                     }
+                };
+                let url = mirror
+                    .upstream
+                    .join(path.as_str().trim_start_matches('/'))
+                    .map_err(|_| warp::reject::custom(BrokenPath))?;
+
+                let mut response =
+                    warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response();
+                let headers = response.headers_mut();
+                for (name, value) in response_headers {
+                    headers.insert(name.unwrap(), value);
                 }
-            };
-            let url = mirror
-                .upstream
-                .join(path.as_str().trim_start_matches('/'))
-                .map_err(|_| warp::reject::custom(BrokenPath))?;
-            Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()))
-        })
+                Ok(response)
+            },
+        )
         .recover(handle_rejection)
         .with(logs);
 

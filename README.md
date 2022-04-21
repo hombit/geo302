@@ -26,6 +26,7 @@ ip_headers = ["x-forwarded-for"] # optional headers to get client's IP, the firs
 ip_header_recursive = true # true: get the first ip in the header, false: get the last one
 healthckeck_interval = 5 # healthcheck interval in seconds
 log_level = "info" # logging level
+response_headers = { } # a pairs of header key-values to add to the server reply
 
 # List of mirrors, both upstream and healthcheck keys are required
 # If requested URL is <host>/<path>, then redirect URL is <UPSTREAM_URL>/<path>

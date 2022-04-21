@@ -32,6 +32,8 @@ pub struct Config {
     pub healthckeck_interval: NonZeroU16,
     #[serde(default = "Config::default_log_level")]
     pub log_level: log::Level,
+    #[serde(default)]
+    pub response_headers: HashMap<String, String>,
     pub geolite2: String,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
