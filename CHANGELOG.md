@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `response_headers` config option
+—
 
 ### Changed
 
@@ -25,11 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Query is attached to the location
+—
 
 ### Security
 
 —
+
+## [0.1.1] 2022-04-21
+
+### Added
+
+- `response_headers` config option
+
+### Fixed
+
+- Query is attached to the location
 
 ## [0.1.0] 2022-04-20
 
