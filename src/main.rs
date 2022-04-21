@@ -1,5 +1,5 @@
 use crate::config::parse_config;
-use crate::filters::{client_ip_filter, dummy_filter};
+use crate::filters::client_ip_filter;
 use crate::geo::{Continent, Geo};
 use crate::healthcheck::check_health;
 use crate::mirror::{ContinentMap, Mirror, MirrorVec};
@@ -86,36 +86,28 @@ async fn main() -> anyhow::Result<()> {
             },
         )
         .and(warp::path::full())
-        .and(dummy_filter(response_headers))
-        .and_then(
-            |mirrors: MirrorVec, path: FullPath, response_headers: HeaderMap| async move {
-                let mirror = {
-                    let mut it_mirrors = mirrors.iter();
-                    loop {
-                        match it_mirrors.next() {
-                            Some(mirror) => {
-                                if mirror.available.load(Ordering::Acquire) {
-                                    break mirror;
-                                }
+        .and_then(|mirrors: MirrorVec, path: FullPath| async move {
+            let mirror = {
+                let mut it_mirrors = mirrors.iter();
+                loop {
+                    match it_mirrors.next() {
+                        Some(mirror) => {
+                            if mirror.available.load(Ordering::Acquire) {
+                                break mirror;
                             }
-                            None => return Err(warp::reject::custom(MirrorsUnavailable)),
                         }
+                        None => return Err(warp::reject::custom(MirrorsUnavailable)),
                     }
-                };
-                let url = mirror
-                    .upstream
-                    .join(path.as_str().trim_start_matches('/'))
-                    .map_err(|_| warp::reject::custom(BrokenPath))?;
-
-                let mut response =
-                    warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response();
-                let headers = response.headers_mut();
-                for (name, value) in response_headers {
-                    headers.insert(name.unwrap(), value);
                 }
-                Ok(response)
-            },
-        )
+            };
+            let url = mirror
+                .upstream
+                .join(path.as_str().trim_start_matches('/'))
+                .map_err(|_| warp::reject::custom(BrokenPath))?;
+
+            Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response())
+        })
+        .with(warp::filters::reply::headers(response_headers))
         .recover(handle_rejection)
         .with(logs);
 

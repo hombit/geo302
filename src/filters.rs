@@ -36,13 +36,6 @@ pub fn client_ip_filter(
         })
 }
 
-pub fn dummy_filter<T>(x: T) -> impl Filter<Extract = (T,), Error = Infallible> + Clone + 'static
-where
-    T: Clone + Send + Sync + 'static,
-{
-    warp::any().map(move || x.clone())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
