@@ -4,6 +4,7 @@ ip_headers = ["x-real-ip", "x-forwarded-for"]
 ip_header_recursive = true
 healthckeck_interval = 5
 log_level = "info"
+response_headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET" }
 
 [mirrors.sai]
 upstream = "https://sai.fits.ztf.snad.space/"
