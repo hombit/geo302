@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -  `anyhow` 1.0.56 -> 1.0.57
+-  `tokio` 1.17.0 -> 1.18.0
 
 ### Deprecated
 
