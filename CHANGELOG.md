@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-—
+-  `clap` 3.1.10 -> 3.1.14
 
 ### Deprecated
 
