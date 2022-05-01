@@ -1,12 +1,14 @@
 name: Test
 
-on: [push, pull_request]
+on: 
+  push:
+  pull_request:
+  schedule:
+    - cron: '17 1 1 * *'
 
 jobs:
-  rust:
-
+  cargo-fmt:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
       with:
@@ -14,22 +16,43 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - name: Check
-      uses: actions-rs/cargo@v1
-      with:
-        command: check
-        args: --all-targets
     - name: Check formatting
       uses: actions-rs/cargo@v1
       with:
         command: fmt
         args: -- --check
-    - name: Test
-      uses: actions-rs/cargo@v1
+  cargo-clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
       with:
-        command: test
+        submodules: true
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
     - name: Run code analysis
       uses: actions-rs/cargo@v1
       with:
         command: clippy
         args: --all-targets -- -D warnings
+  cargo-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Check formatting
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+  audit-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
