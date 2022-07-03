@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `clap` 3.1.10 -> 3.1.14
 - `thiserror` 1.0.30 -> 1.0.31
 - `maxminddb` 0.22.0 -> 0.23.0
-- `anyhow` 1.0.56 -> 1.0.57
+- `anyhow` 1.0.56 -> 1.0.58
 - `tokio` 1.17.0 -> 1.18.0
 
 ### Deprecated
