@@ -19,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `anyhow` 1.0.56 -> 1.0.58
 - `tokio` 1.17.0 -> 1.18.0
 - `reqwest` 0.11.10 -> 0.11.11
--  `clap` 3.1.18 -> 3.2.2 
+- `clap` 3.1.18 -> 3.2.2 
 - `smallvec` 1.8.0 -> 1.9.0
+- `serde` 1.0.137 -> 1.0.144
 
 ### Deprecated
 
