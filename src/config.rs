@@ -5,7 +5,7 @@ use std::num::NonZeroU16;
 use std::path::Path;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum ConfigError {
     #[error(r#"continents must contain "default""#)]
     NoDefaultContinent,
