@@ -20,7 +20,7 @@ log = { version = "0.4", features = ["std", "serde"] }
 maxminddb = { version = "0.23", default_features = false, features = ["unsafe-str-decode"] }
 reqwest = "0.11"
 serde = { version = "1.0", features = ["derive"] }
-simple_logger = { version = "2.1", default-features = false }
+simple_logger = { version = "2.3", default-features = false }
 smallvec = { version = "1.9", default_features = false, features = ["union"]}
 thiserror = "1.0"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
