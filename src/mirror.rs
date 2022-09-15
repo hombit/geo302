@@ -1,17 +1,18 @@
 use crate::config::{Config, ConfigError};
 use crate::geo::Continent;
+
+use hyper::http::uri::{InvalidUri, Uri};
 use serde::Deserialize;
 use smallvec::SmallVec;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
-use url::Url;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(try_from = "MirrorConfig")]
 pub struct Mirror {
-    pub upstream: Url,
-    pub healthcheck: Url,
+    pub upstream: Uri,
+    pub healthcheck: Uri,
     pub available: Arc<AtomicBool>,
 }
 
@@ -22,7 +23,7 @@ struct MirrorConfig {
 }
 
 impl TryFrom<MirrorConfig> for Mirror {
-    type Error = url::ParseError;
+    type Error = InvalidUri;
 
     fn try_from(value: MirrorConfig) -> Result<Self, Self::Error> {
         Ok(Self {

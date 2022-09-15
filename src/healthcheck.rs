@@ -1,10 +1,13 @@
 use crate::Mirror;
-use reqwest::Client;
+
+use hyper::client::Client;
+use hyper_tls::HttpsConnector;
 use std::sync::{atomic, Arc};
 use std::time::Duration;
 
 pub fn check_health(mirrors: &[Mirror], interval: Duration) {
-    let http_client = Client::new();
+    let https = HttpsConnector::new();
+    let http_client = Client::builder().build::<_, hyper::Body>(https);
     for mirror in mirrors {
         let available = Arc::clone(&mirror.available);
         let healthcheck_url = mirror.healthcheck.clone();
@@ -13,13 +16,21 @@ pub fn check_health(mirrors: &[Mirror], interval: Duration) {
             loop {
                 let status = http_client
                     .get(healthcheck_url.clone())
-                    .send()
                     .await
-                    .map(|response| response.error_for_status());
-                available.store(status.is_ok(), atomic::Ordering::Release);
-                match status {
-                    Ok(_) => log::info!("{} is alive", healthcheck_url),
-                    Err(e) => {
+                    .map(|response| response.status());
+                // Use Result.is_ok_and when stabilizes
+                // https://github.com/rust-lang/rust/issues/93050
+                let new_available = match status {
+                    Ok(success) => success.is_success(),
+                    Err(_) => false,
+                };
+                available.store(new_available, atomic::Ordering::Release);
+                match (new_available, status) {
+                    (true, Ok(_)) => log::info!("{} is alive", healthcheck_url),
+                    (false, Ok(status)) => {
+                        log::warn!("{} is unavailable: {}", healthcheck_url, status)
+                    }
+                    (_, Err(e)) => {
                         log::warn!("{} is unavailable: {}", healthcheck_url, e.to_string())
                     }
                 }

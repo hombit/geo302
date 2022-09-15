@@ -2,7 +2,9 @@ use crate::config::parse_config;
 use crate::geo::{Continent, Geo};
 use crate::healthcheck::check_health;
 use crate::mirror::{ContinentMap, Mirror, MirrorVec};
-use crate::rejects::{handle_rejection, BrokenPath, MirrorsUnavailable};
+use crate::rejects::{handle_rejection, MirrorsUnavailable};
+use crate::uri_tools::compose_uri;
+
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
@@ -12,7 +14,6 @@ use thiserror::Error;
 use warp::http::header::{
     HeaderMap, HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue,
 };
-use warp::http::Uri;
 use warp::path::FullPath;
 use warp::reply::Reply;
 use warp::Filter;
@@ -23,6 +24,7 @@ mod geo;
 mod healthcheck;
 mod mirror;
 mod rejects;
+mod uri_tools;
 
 #[derive(Error, Debug)]
 pub enum HeaderError {
@@ -105,16 +107,14 @@ async fn main() -> anyhow::Result<()> {
                         }
                     }
                 };
-                let url = {
-                    let mut url = mirror
-                        .upstream
-                        .join(path.as_str().trim_start_matches('/'))
-                        .map_err(|_| warp::reject::custom(BrokenPath))?;
-                    url.set_query(query.as_deref());
-                    url
-                };
+                let uri = compose_uri(
+                    &mirror.upstream,
+                    &(String::from(path.as_str())
+                        + query.as_ref().map(String::as_str).unwrap_or("")),
+                )
+                .expect("Invalid URI"); // TODO: handle error
 
-                Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response())
+                Ok(warp::redirect::found(uri).into_response())
             },
         )
         .with(warp::filters::reply::headers(response_headers))

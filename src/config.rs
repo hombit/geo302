@@ -1,4 +1,5 @@
 use crate::{Continent, Mirror};
+
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::num::NonZeroU16;
