@@ -1,4 +1,3 @@
-use crate::config::Config;
 use maxminddb::{geoip2, MaxMindDBError};
 use std::net::IpAddr;
 use std::path::Path;
@@ -83,10 +82,6 @@ impl Geo {
         Ok(Self {
             maxminddb_reader: maxminddb::Reader::open_readfile(filepath)?,
         })
-    }
-
-    pub fn from_config(config: &Config) -> Result<Self, GeoError> {
-        Self::from_file(&config.geolite2)
     }
 
     pub fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {

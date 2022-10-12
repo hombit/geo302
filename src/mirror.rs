@@ -1,4 +1,3 @@
-use crate::config::{Config, ConfigError};
 use crate::geo::Continent;
 
 use hyper::http::uri::{InvalidUri, Uri};
@@ -7,6 +6,7 @@ use smallvec::SmallVec;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use thiserror::Error;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(try_from = "MirrorConfig")]
@@ -43,47 +43,43 @@ pub struct ContinentMap {
 }
 
 impl ContinentMap {
-    pub fn from_config(config: &Config) -> Result<Self, ConfigError> {
-        let Config {
-            mirrors: conf_mirrors,
-            continents: conf_continents,
-            ..
-        } = config;
-
-        conf_continents
+    pub fn from_mirrors_and_continents(
+        mirrors: &HashMap<String, Mirror>,
+        continents: &HashMap<String, Vec<String>>,
+    ) -> Result<Self, ContinentMapConfigError> {
+        continents
             .get("default")
-            .ok_or(ConfigError::NoDefaultContinent)?;
+            .ok_or(ContinentMapConfigError::NoDefaultContinent)?;
 
-        if conf_mirrors.is_empty() {
-            return Err(ConfigError::NoMirrors);
+        if mirrors.is_empty() {
+            return Err(ContinentMapConfigError::NoMirrors);
         }
 
         Ok(Self {
-            mirrors: conf_mirrors.values().cloned().collect(),
-            map: conf_continents
+            mirrors: mirrors.values().cloned().collect(),
+            map: continents
                 .iter()
                 .map(|(continent_string, mirror_strings)| {
-                    let continent = continent_string
-                        .as_str()
-                        .try_into()
-                        .map_err(|_| ConfigError::ContinentUnknown(continent_string.to_owned()))?;
+                    let continent = continent_string.as_str().try_into().map_err(|_| {
+                        ContinentMapConfigError::ContinentUnknown(continent_string.to_owned())
+                    })?;
                     let mirrors = Arc::new(
                         mirror_strings
                             .iter()
                             .map(|s| {
-                                conf_mirrors
+                                mirrors
                                     .get(s)
-                                    .ok_or_else(|| ConfigError::MirrorUnknown {
+                                    .ok_or_else(|| ContinentMapConfigError::MirrorUnknown {
                                         continent,
                                         mirror: s.to_owned(),
                                     })
                                     .cloned()
                             })
-                            .collect::<Result<_, ConfigError>>()?,
+                            .collect::<Result<_, ContinentMapConfigError>>()?,
                     );
                     Ok((continent, mirrors))
                 })
-                .collect::<Result<HashMap<Continent, MirrorVec>, ConfigError>>()?,
+                .collect::<Result<HashMap<Continent, MirrorVec>, ContinentMapConfigError>>()?,
         })
     }
 
@@ -103,9 +99,37 @@ impl ContinentMap {
     }
 }
 
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum ContinentMapConfigError {
+    #[error(r#"continents must contain "default""#)]
+    NoDefaultContinent,
+    #[error(r#"continent {continent:?} mention unknown mirror {mirror}"#)]
+    MirrorUnknown {
+        continent: Continent,
+        mirror: String,
+    },
+    #[error(r#"continent {0} is not supported, connect Earth goverment to fix it"#)]
+    ContinentUnknown(String),
+    #[error(r#"no mirrors are specified"#)]
+    NoMirrors,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::config::Config;
+
+    pub fn continent_map_from_config(
+        config: &Config,
+    ) -> Result<ContinentMap, ContinentMapConfigError> {
+        let Config {
+            mirrors,
+            continents,
+            ..
+        } = config;
+        ContinentMap::from_mirrors_and_continents(mirrors, continents)
+    }
 
     #[test]
     fn empty_config() {
@@ -117,7 +141,7 @@ mod tests {
         [continents]
         "#;
         let config: Config = toml::from_str(s).unwrap();
-        assert!(ContinentMap::from_config(&config).is_err());
+        assert!(continent_map_from_config(&config).is_err());
     }
 
     #[test]
@@ -132,8 +156,8 @@ mod tests {
         "#;
         let config: Config = toml::from_str(s).unwrap();
         assert_eq!(
-            ContinentMap::from_config(&config).unwrap_err(),
-            ConfigError::NoDefaultContinent
+            continent_map_from_config(&config).unwrap_err(),
+            ContinentMapConfigError::NoDefaultContinent
         );
     }
 
@@ -149,8 +173,8 @@ mod tests {
         "#;
         let config: Config = toml::from_str(s).unwrap();
         assert_eq!(
-            ContinentMap::from_config(&config).unwrap_err(),
-            ConfigError::NoMirrors
+            continent_map_from_config(&config).unwrap_err(),
+            ContinentMapConfigError::NoMirrors
         );
     }
 
@@ -167,8 +191,8 @@ mod tests {
         "#;
         let config: Config = toml::from_str(s).unwrap();
         assert_eq!(
-            ContinentMap::from_config(&config).unwrap_err(),
-            ConfigError::NoDefaultContinent
+            continent_map_from_config(&config).unwrap_err(),
+            ContinentMapConfigError::NoDefaultContinent
         );
     }
 
@@ -185,8 +209,8 @@ mod tests {
         "#;
         let config: Config = toml::from_str(s).unwrap();
         assert!(matches!(
-            ContinentMap::from_config(&config).unwrap_err(),
-            ConfigError::MirrorUnknown { .. }
+            continent_map_from_config(&config).unwrap_err(),
+            ContinentMapConfigError::MirrorUnknown { .. }
         ));
     }
 
@@ -204,8 +228,8 @@ mod tests {
         "#;
         let config: Config = toml::from_str(s).unwrap();
         assert!(matches!(
-            ContinentMap::from_config(&config).unwrap_err(),
-            ConfigError::ContinentUnknown { .. }
+            continent_map_from_config(&config).unwrap_err(),
+            ContinentMapConfigError::ContinentUnknown { .. }
         ));
     }
 }
