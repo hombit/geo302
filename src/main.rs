@@ -16,7 +16,7 @@ mod mirror;
 mod service;
 mod uri_tools;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let config_path = std::env::args()
         .nth(1)
