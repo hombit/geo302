@@ -1,126 +1,56 @@
 use crate::config::parse_config;
-use crate::geo::{Continent, Geo};
-use crate::healthcheck::check_health;
-use crate::mirror::{ContinentMap, Mirror, MirrorVec};
-use crate::rejects::{handle_rejection, BrokenPath, MirrorsUnavailable};
-use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
-use std::sync::atomic::Ordering;
+use crate::mirror::Mirror;
+use crate::service::Geo302Service;
+
+use hyper::server::conn::AddrStream;
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Request, Server};
+use std::convert::Infallible;
 use std::sync::Arc;
-use std::time::Duration;
-use thiserror::Error;
-use warp::http::header::{
-    HeaderMap, HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue,
-};
-use warp::http::Uri;
-use warp::path::FullPath;
-use warp::reply::Reply;
-use warp::Filter;
 
 mod config;
-mod filters;
 mod geo;
+mod header_tools;
 mod healthcheck;
 mod mirror;
-mod rejects;
+mod service;
+mod uri_tools;
 
-#[derive(Error, Debug)]
-pub enum HeaderError {
-    #[error("{0}")]
-    InvalidHeaderName(InvalidHeaderName),
-    #[error("{0}")]
-    InvalidHeaderValue(InvalidHeaderValue),
-}
-
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "geo302.toml".to_owned());
 
     let config = parse_config(config_path)?;
-    let host: SocketAddr = config.host.parse()?;
-    let ip_header_recursive = config.ip_headers_recursive;
-    let continent_map = ContinentMap::from_config(&config)?;
-    let geo = Arc::new(Geo::from_config(&config)?);
-    let check_interval = Duration::new(config.healthckeck_interval.get().into(), 0);
-    let ip_header_names = config.ip_headers;
-    let response_headers = config
-        .response_headers
-        .iter()
-        .map(|(name, value)| {
-            let name = match HeaderName::from_str(name) {
-                Ok(name) => name,
-                Err(err) => return Err(HeaderError::InvalidHeaderName(err)),
-            };
-            let value = match HeaderValue::from_str(value) {
-                Ok(value) => value,
-                Err(err) => return Err(HeaderError::InvalidHeaderValue(err)),
-            };
-            Ok((name, value))
-        })
-        .collect::<Result<HeaderMap, _>>()?;
+
+    let host = config.host;
 
     simple_logger::init_with_level(config.log_level)?;
 
-    check_health(continent_map.all_mirrors(), check_interval);
+    let geo302_service = Arc::new(Geo302Service::from_config(config)?);
 
-    let logs = warp::log::custom(|info| {
-        log::info!(
-            "{} {} {} {}",
-            info.remote_addr()
-                .map_or_else(|| "_".into(), |addr| format!("{}", addr.ip())),
-            info.method(),
-            info.path(),
-            info.status(),
-        )
+    let make_service = make_service_fn(move |connection: &AddrStream| {
+        let socket_remote_ip = connection.remote_addr().ip();
+        let geo302_service = geo302_service.clone();
+        let service = service_fn(move |request: Request<Body>| {
+            let geo302_service = geo302_service.clone();
+            async move {
+                let response = geo302_service
+                    .response(socket_remote_ip, &request)
+                    .unwrap_or_else(service::make_error_response);
+                service::log_response(socket_remote_ip, &request, &response);
+                Ok::<_, Infallible>(response)
+            }
+        });
+        async move { Ok::<_, Infallible>(service) }
     });
 
-    let routes = warp::get()
-        .and(filters::client_ip(ip_header_names, ip_header_recursive))
-        .map(
-            move |ip: Option<IpAddr>| match ip.and_then(|ip| geo.try_lookup_continent(ip).ok()) {
-                Some(continent) => continent_map.get(continent),
-                None => continent_map.get_default(),
-            },
-        )
-        .and(warp::path::full())
-        .and(
-            warp::query::raw()
-                .map(Option::Some)
-                .or_else(|_err| async { Ok::<_, warp::Rejection>((None,)) }),
-        )
-        .and_then(
-            |mirrors: MirrorVec, path: FullPath, query: Option<String>| async move {
-                let mirror = {
-                    let mut it_mirrors = mirrors.iter();
-                    loop {
-                        match it_mirrors.next() {
-                            Some(mirror) => {
-                                if mirror.available.load(Ordering::Acquire) {
-                                    break mirror;
-                                }
-                            }
-                            None => return Err(warp::reject::custom(MirrorsUnavailable)),
-                        }
-                    }
-                };
-                let url = {
-                    let mut url = mirror
-                        .upstream
-                        .join(path.as_str().trim_start_matches('/'))
-                        .map_err(|_| warp::reject::custom(BrokenPath))?;
-                    url.set_query(query.as_deref());
-                    url
-                };
+    let server = Server::bind(&host).serve(make_service);
 
-                Ok(warp::redirect::found(url.as_str().parse::<Uri>().unwrap()).into_response())
-            },
-        )
-        .with(warp::filters::reply::headers(response_headers))
-        .recover(handle_rejection)
-        .with(logs);
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
+    }
 
-    warp::serve(routes).run(host).await;
-    Ok(())
+    Err(anyhow::anyhow!("server exited"))
 }
