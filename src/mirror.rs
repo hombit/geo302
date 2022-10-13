@@ -4,16 +4,17 @@ use hyper::http::uri::{InvalidUri, Uri};
 use serde::Deserialize;
 use smallvec::SmallVec;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use thiserror::Error;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(try_from = "MirrorConfig")]
-pub struct Mirror {
+pub struct MirrorImpl {
     pub upstream: Uri,
     pub healthcheck: Uri,
-    pub available: Arc<AtomicBool>,
+    pub available: AtomicBool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,19 +23,43 @@ struct MirrorConfig {
     healthcheck: String,
 }
 
-impl TryFrom<MirrorConfig> for Mirror {
+impl TryFrom<MirrorConfig> for MirrorImpl {
     type Error = InvalidUri;
 
     fn try_from(value: MirrorConfig) -> Result<Self, Self::Error> {
         Ok(Self {
             upstream: value.upstream.as_str().try_into()?,
             healthcheck: value.healthcheck.as_str().try_into()?,
-            available: Arc::new(AtomicBool::new(false)),
+            available: AtomicBool::new(false),
         })
     }
 }
 
-pub type MirrorVec = Arc<SmallVec<[Mirror; 4]>>;
+#[derive(Debug, Clone, Deserialize)]
+#[serde(from = "MirrorImpl")]
+pub struct Mirror(Arc<MirrorImpl>);
+
+impl AsRef<MirrorImpl> for Mirror {
+    fn as_ref(&self) -> &MirrorImpl {
+        &self.0
+    }
+}
+
+impl Deref for Mirror {
+    type Target = MirrorImpl;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<MirrorImpl> for Mirror {
+    fn from(value: MirrorImpl) -> Self {
+        Self(Arc::new(value))
+    }
+}
+
+pub type MirrorVec = SmallVec<[Mirror; 4]>;
 
 #[derive(Debug, Clone)]
 pub struct ContinentMap {
@@ -63,35 +88,32 @@ impl ContinentMap {
                     let continent = continent_string.as_str().try_into().map_err(|_| {
                         ContinentMapConfigError::ContinentUnknown(continent_string.to_owned())
                     })?;
-                    let mirrors = Arc::new(
-                        mirror_strings
-                            .iter()
-                            .map(|s| {
-                                mirrors
-                                    .get(s)
-                                    .ok_or_else(|| ContinentMapConfigError::MirrorUnknown {
-                                        continent,
-                                        mirror: s.to_owned(),
-                                    })
-                                    .cloned()
-                            })
-                            .collect::<Result<_, ContinentMapConfigError>>()?,
-                    );
+                    let mirrors = mirror_strings
+                        .iter()
+                        .map(|s| {
+                            mirrors
+                                .get(s)
+                                .ok_or_else(|| ContinentMapConfigError::MirrorUnknown {
+                                    continent,
+                                    mirror: s.to_string(),
+                                })
+                                .cloned()
+                        })
+                        .collect::<Result<_, ContinentMapConfigError>>()?;
                     Ok((continent, mirrors))
                 })
                 .collect::<Result<HashMap<Continent, MirrorVec>, ContinentMapConfigError>>()?,
         })
     }
 
-    pub fn get(&self, continent: Continent) -> MirrorVec {
+    pub fn get(&self, continent: Continent) -> &MirrorVec {
         self.map
             .get(&continent)
-            .cloned()
             .unwrap_or_else(|| self.get_default())
     }
 
-    pub fn get_default(&self) -> MirrorVec {
-        self.map.get(&Continent::Default).unwrap().clone()
+    pub fn get_default(&self) -> &MirrorVec {
+        self.map.get(&Continent::Default).unwrap()
     }
 
     pub fn all_mirrors(&self) -> &[Mirror] {
