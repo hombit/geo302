@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reimplementation with pure `hyper` with no `wasp` and `reqwest` dependencies.
 - `geo302` is now a single-thread: I see no reason to run it in multiple threads.
+- Reduce allocations
 
 ### Deprecated
 
