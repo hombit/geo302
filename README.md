@@ -52,14 +52,18 @@ default = ["<some_mirror>", "<another_mirror>"]
 
 ## Limitations
 
-**`geo302` is not a load-balancer.** `geo302` currently doesn't support an upstream rotation for a single location, but you can specify a list of upstreams: the first available location will be used.
+**`geo302` is a failover and not a load-balancer.**
+Currently `geo302` doesn't support an upstream rotation for a single location, but you can specify a list of upstreams: the first available location will be used.
 If you need a load balancing to optimize a network usage, but do not need geoIP support, consider using another redirect proxy like [`rlb`](https://github.com/umputun/rlb).
 
-**Locations are continent-level only.** See https://github.com/hombit/geo302/issues/3 for country-level support
+**Locations are continent-level only.**
+See https://github.com/hombit/geo302/issues/3 for country-level support
 
-**Only `GET` is supported.** See https://github.com/hombit/geo302/issues/4 for `HEAD` support for health checks
+**Only `GET` is supported.**
+See https://github.com/hombit/geo302/issues/4 for `HEAD` support for health checks
 
-All these limitations are not a part of the design and can be fixed in the future version. Feel free to open an issue or a PR.
+All these limitations are not a part of the design and can be fixed in the future version.
+Feel free to open an issue or a PR.
 
 ## License
 
