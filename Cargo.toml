@@ -10,8 +10,9 @@ keywords = ["geoIP", "http-proxy"]
 categories = ["web-programming::http-server"]
 
 [profile.release]
-lto = true
 codegen-units = 1
+lto = true
+strip = true
 
 [dependencies]
 anyhow = "1"
