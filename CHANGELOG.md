@@ -13,10 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Reimplementation with pure `hyper` with no `wasp` and `reqwest` dependencies.
-- `geo302` is now a single-thread: I see no reason to run it in multiple threads.
-- Reduce allocations
-- Binary size reduced a lot by removing unsued dependencies and features. Also release build is stripped now,
+—
 
 ### Deprecated
 
@@ -33,6 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 —
+
+## [0.1.3] 2022-10-20
+
+### Changed
+
+- Reimplementation with pure `hyper` with no `wasp` and `reqwest` dependencies.
+- `geo302` is now a single-thread: I see no reason to run it in multiple threads.
+- Reduce allocations
+- Binary size reduced a lot by removing unused dependencies and features (from 5.8MB to 1.2MB on aarch64 Linux). Also release build is stripped now.
 
 ## [0.1.2] 2022-09-05
 
