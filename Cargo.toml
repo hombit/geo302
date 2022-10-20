@@ -16,7 +16,10 @@ codegen-units = 1
 [dependencies]
 anyhow = "1"
 http-serde = {version = "1.1"}
-hyper = { version = "0.14", features = ["client", "http1", "http2", "server"] }  # http2 can be used by client
+# http2 client wouldn't work until this is fixed:
+# https://github.com/hyperium/hyper-tls/pull/85
+# And we don't really need http2 server
+hyper = { version = "0.14", features = ["client", "http1", "server"] }
 hyper-tls = "0.5"
 log = { version = "0.4", features = ["std", "serde"] }
 maxminddb = { version = "0.23", default_features = false, features = ["unsafe-str-decode"] }
