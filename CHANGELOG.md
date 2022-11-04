@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-—
+- `simple_logger` 2.3 -> 4.0
 
 ### Deprecated
 

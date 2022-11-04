@@ -25,7 +25,7 @@ hyper-tls = "0.5"
 log = { version = "0.4", features = ["std", "serde"] }
 maxminddb = { version = "0.23", default_features = false, features = ["unsafe-str-decode"] }
 serde = { version = "1.0", features = ["derive"] }
-simple_logger = { version = "2.3", default-features = false }
+simple_logger = { version = "4.0", default-features = false }
 smallvec = { version = "1.9", default_features = false, features = ["union"]}
 thiserror = "1"
 tokio = { version = "1", features = ["rt", "macros"] }
