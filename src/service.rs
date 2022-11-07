@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::geo::{Geo, GeoError};
+use crate::geo::{max_mind_db::MaxMindDbGeo, Geo, GeoError};
 use crate::header_tools::client_ip;
 use crate::healthcheck::HealthCheck;
 use crate::mirror::{ContinentMap, ContinentMapConfigError, Mirror};
@@ -25,7 +25,7 @@ pub struct Geo302Service {
     ip_headers: Vec<String>,
     ip_headers_recursive: bool,
     response_headers: HeaderMap,
-    geo: Geo,
+    geo: Box<dyn Geo>,
     continent_map: ContinentMap,
     #[allow(dead_code)] // We need HealthCheck only for its side effects
     health_check: HealthCheck,
@@ -53,7 +53,7 @@ impl Geo302Service {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geo: Geo::from_file(geolite2_path)?,
+            geo: Box::new(MaxMindDbGeo::from_file(geolite2_path)?),
             continent_map,
             health_check,
         })
