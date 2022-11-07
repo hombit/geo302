@@ -12,6 +12,7 @@ mod config;
 mod geo;
 mod header_tools;
 mod healthcheck;
+mod interval_tree;
 mod mirror;
 mod service;
 mod uri_tools;
