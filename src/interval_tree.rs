@@ -84,6 +84,6 @@ where
 
 #[derive(Debug, Error)]
 pub struct OccupiedError<K, S> {
-    key: K,
-    size: S,
+    pub key: K,
+    pub size: S,
 }

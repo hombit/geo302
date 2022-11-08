@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::geo::{max_mind_db::MaxMindDbGeo, Geo, GeoError};
+use crate::geo::{Geo, GeoError, GeoTrait};
 use crate::header_tools::client_ip;
 use crate::healthcheck::HealthCheck;
 use crate::mirror::{ContinentMap, ContinentMapConfigError, Mirror};
@@ -25,7 +25,7 @@ pub struct Geo302Service {
     ip_headers: Vec<String>,
     ip_headers_recursive: bool,
     response_headers: HeaderMap,
-    geo: Box<dyn Geo>,
+    geo: Geo,
     continent_map: ContinentMap,
     #[allow(dead_code)] // We need HealthCheck only for its side effects
     health_check: HealthCheck,
@@ -37,7 +37,7 @@ impl Geo302Service {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geolite2: geolite2_path,
+            geoip: geo_config,
             mirrors: conf_mirrors,
             continents: conf_continents,
             ..
@@ -53,7 +53,7 @@ impl Geo302Service {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geo: Box::new(MaxMindDbGeo::from_file(geolite2_path)?),
+            geo: geo_config.try_into()?,
             continent_map,
             health_check,
         })
@@ -142,8 +142,8 @@ pub fn log_response(socket_ip_addr: IpAddr, request: &Request<Body>, response: &
 
 #[derive(Debug, Error)]
 pub enum InvalidConfigError {
-    #[error("{0:?}")]
+    #[error(transparent)]
     ContinentMapConfigError(#[from] ContinentMapConfigError),
-    #[error("{0:?}")]
+    #[error(transparent)]
     GeoError(#[from] GeoError),
 }

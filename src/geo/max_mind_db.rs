@@ -1,4 +1,4 @@
-use crate::geo::{Continent, Geo, GeoError};
+use crate::geo::{Continent, GeoError, GeoTrait};
 
 use maxminddb::geoip2;
 use std::net::IpAddr;
@@ -41,7 +41,7 @@ impl MaxMindDbGeo {
     }
 }
 
-impl Geo for MaxMindDbGeo {
+impl GeoTrait for MaxMindDbGeo {
     fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {
         let country: geoip2::Country = self.maxminddb_reader.lookup(address)?;
         let geo_name_id: GeoNameId = country

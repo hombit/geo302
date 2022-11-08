@@ -1,3 +1,5 @@
+use crate::geo::ripe_geo::RipeGeoDataError;
+
 use maxminddb::MaxMindDBError;
 use thiserror::Error;
 
@@ -7,4 +9,6 @@ pub enum GeoError {
     ContinentUnknown,
     #[error(transparent)]
     MaxMindDBError(#[from] MaxMindDBError),
+    #[error(transparent)]
+    RipeGeo(#[from] RipeGeoDataError),
 }

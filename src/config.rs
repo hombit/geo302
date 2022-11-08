@@ -1,3 +1,4 @@
+use crate::geo::GeoConfig;
 use crate::Mirror;
 
 use hyper::HeaderMap;
@@ -21,7 +22,7 @@ pub struct Config {
     pub log_level: log::Level,
     #[serde(default, with = "http_serde::header_map")]
     pub response_headers: HeaderMap,
-    pub geolite2: Box<Path>,
+    pub geoip: GeoConfig,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
 }

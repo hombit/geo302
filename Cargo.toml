@@ -17,6 +17,7 @@ strip = true
 
 [dependencies]
 anyhow = "1"
+enum_dispatch = "0.3"
 http-serde = {version = "1.1"}
 # http2 client wouldn't work until this is fixed:
 # https://github.com/hyperium/hyper-tls/pull/85
