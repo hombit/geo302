@@ -1,10 +1,10 @@
 pub use continent::Continent;
 pub use error::GeoError;
-use max_mind_db::MaxMindDbGeo;
 use ripe_geo::{RipeGeo, RipeGeoOverlapsStrategy};
 
 mod continent;
 mod error;
+#[cfg(feature = "maxminddb")]
 pub mod max_mind_db;
 pub mod ripe_geo;
 
@@ -17,7 +17,8 @@ use std::path::PathBuf;
 #[serde(try_from = "GeoConfig")]
 #[enum_dispatch]
 pub enum Geo {
-    MaxMindDb(MaxMindDbGeo),
+    #[cfg(feature = "maxminddb")]
+    MaxMindDb(max_mind_db::MaxMindDbGeo),
     RipeGeo(RipeGeo),
 }
 
@@ -29,6 +30,7 @@ pub trait GeoTrait: Send + Sync {
 #[derive(Deserialize)]
 #[serde(tag = "type")]
 pub enum GeoConfig {
+    #[cfg(feature = "maxminddb")]
     #[serde(
         alias = "maxminddb",
         alias = "maxmind",
@@ -48,7 +50,10 @@ impl TryFrom<GeoConfig> for Geo {
 
     fn try_from(value: GeoConfig) -> Result<Self, Self::Error> {
         let slf = match value {
-            GeoConfig::MaxMindDb { path } => Self::MaxMindDb(MaxMindDbGeo::from_file(&path)?),
+            #[cfg(feature = "maxminddb")]
+            GeoConfig::MaxMindDb { path } => {
+                Self::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?)
+            }
             GeoConfig::RipeGeo { path, overlaps } => {
                 Self::RipeGeo(RipeGeo::from_folder(&path, overlaps)?)
             }

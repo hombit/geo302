@@ -1,5 +1,6 @@
 use crate::geo::ripe_geo::RipeGeoDataError;
 
+#[cfg(feature = "maxminddb")]
 use maxminddb::MaxMindDBError;
 use thiserror::Error;
 
@@ -7,6 +8,7 @@ use thiserror::Error;
 pub enum GeoError {
     #[error("continent is not recognised")]
     ContinentUnknown,
+    #[cfg(feature = "maxminddb")]
     #[error(transparent)]
     MaxMindDBError(#[from] MaxMindDBError),
     #[error(transparent)]
