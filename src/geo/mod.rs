@@ -41,7 +41,7 @@ pub enum GeoConfig {
     #[serde(alias = "ripe-geo", alias = "ripegeo", alias = "ripe geo")]
     RipeGeo {
         path: PathBuf,
-        overlaps: RipeGeoOverlapsStrategy,
+        overlaps: Option<RipeGeoOverlapsStrategy>,
     },
 }
 
@@ -54,9 +54,10 @@ impl TryFrom<GeoConfig> for Geo {
             GeoConfig::MaxMindDb { path } => {
                 Self::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?)
             }
-            GeoConfig::RipeGeo { path, overlaps } => {
-                Self::RipeGeo(RipeGeo::from_folder(&path, overlaps)?)
-            }
+            GeoConfig::RipeGeo { path, overlaps } => Self::RipeGeo(RipeGeo::from_folder(
+                &path,
+                overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip),
+            )?),
         };
         Ok(slf)
     }

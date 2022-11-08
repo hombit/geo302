@@ -156,7 +156,9 @@ mod tests {
     #[test]
     fn empty_config() {
         let s = r#"
-        geolite2 = ""
+        [geoip]
+        type = "ripe-geo"
+        path = "ripe-geo/continents"
         
         [mirrors]
         
@@ -169,7 +171,9 @@ mod tests {
     #[test]
     fn empty_continents() {
         let s = r#"
-        geolite2 = ""
+        [geoip]
+        type = "ripe-geo"
+        path = "ripe-geo/continents"
         
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
@@ -186,7 +190,9 @@ mod tests {
     #[test]
     fn empty_mirrors() {
         let s = r#"
-        geolite2 = ""
+        [geoip]
+        type = "ripe-geo"
+        path = "ripe-geo/continents"
         
         [mirrors]
         
@@ -203,7 +209,9 @@ mod tests {
     #[test]
     fn no_default_continent() {
         let s = r#"
-        geolite2 = ""
+        [geoip]
+        type = "ripe-geo"
+        path = "ripe-geo/continents"
         
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
@@ -221,7 +229,9 @@ mod tests {
     #[test]
     fn wrong_mirror() {
         let s = r#"
-        geolite2 = ""
+        [geoip]
+        type = "ripe-geo"
+        path = "ripe-geo/continents"
         
         [mirrors]
         mirror1 = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
@@ -239,7 +249,9 @@ mod tests {
     #[test]
     fn wrong_continent_name() {
         let s = r#"
-        geolite2 = ""
+        [geoip]
+        type = "ripe-geo"
+        path = "ripe-geo/continents"
         
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
