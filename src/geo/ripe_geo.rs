@@ -52,6 +52,8 @@ pub enum RipeGeoFileError {
     },
     #[error(r#"Record "{0}" overlaps with previously inserted "{1}""#)]
     OverlappedRecord(String, String),
+    #[error("File is empty")]
+    EmptyFile,
 }
 
 #[derive(Error, Debug)]
@@ -215,6 +217,7 @@ impl RipeGeo {
     {
         let buf_reader = BufReader::new(reader);
         let mut warnings = vec![];
+        let mut count = 0;
         for line in buf_reader.lines() {
             let line = line?;
             let record: Record<Ip> =
@@ -237,9 +240,15 @@ impl RipeGeo {
                     RipeGeoOverlapsStrategy::Fail => return Err(error),
                     RipeGeoOverlapsStrategy::Skip => warnings.push(error),
                 }
+            } else {
+                count += 1;
             }
         }
-        Ok(warnings)
+        if count == 0 {
+            Err(RipeGeoFileError::EmptyFile)
+        } else {
+            Ok(warnings)
+        }
     }
 
     pub fn from_text_files<I, P>(
