@@ -339,3 +339,22 @@ impl GeoTrait for RipeGeo {
         .copied()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn record_to_from_string_ipv4() {
+        let s = "37.228.128.0/23";
+        let record: Record<IpV4> = s.parse().unwrap();
+        assert_eq!(record.to_string(), s);
+    }
+
+    #[test]
+    fn record_to_from_string_ipv6() {
+        let s = "2001:43f8:700::/44";
+        let record: Record<IpV6> = s.parse().unwrap();
+        assert_eq!(record.to_string(), s);
+    }
+}
