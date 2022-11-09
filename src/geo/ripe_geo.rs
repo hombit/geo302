@@ -25,6 +25,8 @@ pub enum RipeGeoDataError {
         path: PathBuf,
         error: RipeGeoFileError,
     },
+    #[error(r#"Some files are missed: {0:?}"#)]
+    MissingFiles(HashSet<(Continent, IpType)>),
     #[error(r#"Error while attemping to read directory "{path}": {error}"#)]
     DirIoError {
         path: PathBuf,
@@ -64,8 +66,8 @@ pub enum RipeGeoRecordError {
     SuffixTooLarge(u32),
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-enum IpType {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum IpType {
     V4,
     V6,
 }
@@ -283,6 +285,9 @@ impl RipeGeo {
             .into_iter()
             .map(error_mapper)
             .for_each(|warning| log::warn!("{warning}"));
+        }
+        if !cont_ip_set.is_empty() {
+            return Err(RipeGeoDataError::MissingFiles(cont_ip_set).into());
         }
         Ok(Self {
             ipv4,
