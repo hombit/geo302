@@ -18,8 +18,9 @@ strip = true
 [features]
 maxminddb = ["dep:maxminddb"]
 ripe-geo = []
+ripe-geo-embedded = ["dep:include_dir", "ripe-geo"]
 
-full = ["maxminddb", "ripe-geo"]
+full = ["maxminddb", "ripe-geo", "ripe-geo-embedded"]
 default = ["maxminddb", "ripe-geo"]
 
 [dependencies]
@@ -29,6 +30,7 @@ http-serde = {version = "1.1"}
 # http2 client wouldn't work until this is fixed:
 # https://github.com/hyperium/hyper-tls/pull/85
 # And we don't really need http2 server
+include_dir = { version = "0.7", optional = true }
 hyper = { version = "0.14", features = ["client", "http1", "server"] }
 hyper-tls = "0.5"
 log = { version = "0.4", features = ["std", "serde"] }

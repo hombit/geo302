@@ -1,6 +1,8 @@
 use crate::geo::{Continent, GeoError, GeoTrait};
 use crate::interval_tree::IntervalTreeMap;
 
+#[cfg(feature = "ripe-geo-embedded")]
+use include_dir::include_dir;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::io::{BufRead, BufReader, Read};
@@ -186,6 +188,10 @@ const ALL_RIPE_GEO_CONTINENTS: [Continent; 6] = [
     Continent::SouthAmerica,
 ];
 
+#[cfg(feature = "ripe-geo-embedded")]
+const RIPE_GEO_CONTINENTS: include_dir::Dir<'_> =
+    include_dir!("$CARGO_MANIFEST_DIR/ripe-geo/continents");
+
 pub struct RipeGeo {
     ipv4: IntervalTreeMap<u32, Continent>,
     ipv6: IntervalTreeMap<u128, Continent>,
@@ -340,6 +346,17 @@ impl RipeGeo {
                 Some(Ok((path, boxed_file)))
             });
         Self::from_text_files(it, overlaps_strategy)
+    }
+
+    #[cfg(feature = "ripe-geo-embedded")]
+    // Since all errors here are related to compile-time issues, we don't need Result and just panic
+    pub fn from_embedded() -> Self {
+        let it = RIPE_GEO_CONTINENTS.files().map(|file| {
+            let reader: Box<dyn Read> = Box::new(file.contents());
+            Ok((file.path(), reader))
+        });
+        Self::from_text_files(it, RipeGeoOverlapsStrategy::Skip)
+            .expect("Recompile geo302 with correct ripe-geo/continents folder embedded")
     }
 }
 

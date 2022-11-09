@@ -44,6 +44,10 @@ pub enum GeoConfig {
     #[cfg(feature = "ripe-geo")]
     #[serde(alias = "ripe-geo", alias = "ripegeo", alias = "ripe geo")]
     RipeGeo {
+        #[cfg(feature = "ripe-geo-embedded")]
+        #[serde(default)]
+        path: Option<PathBuf>,
+        #[cfg(not(feature = "ripe-geo-embedded"))]
         path: PathBuf,
         overlaps: Option<RipeGeoOverlapsStrategy>,
     },
@@ -58,11 +62,24 @@ impl TryFrom<GeoConfig> for Geo {
             GeoConfig::MaxMindDb { path } => {
                 Self::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?)
             }
-            #[cfg(feature = "ripe-geo")]
+            #[cfg(all(feature = "ripe-geo", not(feature = "ripe-geo-embedded")))]
             GeoConfig::RipeGeo { path, overlaps } => Self::RipeGeo(RipeGeo::from_folder(
                 &path,
                 overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip),
             )?),
+            #[cfg(feature = "ripe-geo-embedded")]
+            GeoConfig::RipeGeo {
+                path: Some(path),
+                overlaps,
+            } => Self::RipeGeo(RipeGeo::from_folder(
+                &path,
+                overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip),
+            )?),
+            #[cfg(feature = "ripe-geo-embedded")]
+            GeoConfig::RipeGeo {
+                path: None,
+                overlaps: _,
+            } => Self::RipeGeo(RipeGeo::from_embedded()),
         };
         Ok(slf)
     }
