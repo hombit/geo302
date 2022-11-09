@@ -192,14 +192,36 @@ const ALL_RIPE_GEO_CONTINENTS: [Continent; 6] = [
 const RIPE_GEO_CONTINENTS: include_dir::Dir<'_> =
     include_dir!("$CARGO_MANIFEST_DIR/ripe-geo/continents");
 
-pub struct RipeGeo {
+pub struct RipeGeo(RipeGeoImpl);
+
+impl From<RipeGeoImpl> for RipeGeo {
+    fn from(value: RipeGeoImpl) -> Self {
+        Self(value)
+    }
+}
+
+impl GeoTrait for RipeGeo {
+    fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {
+        self.0.try_lookup_continent(address)
+    }
+}
+
+impl std::ops::Deref for RipeGeo {
+    type Target = RipeGeoImpl;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+pub struct RipeGeoImpl {
     ipv4: IntervalTreeMap<u32, Continent>,
     ipv6: IntervalTreeMap<u128, Continent>,
     #[allow(dead_code)] // we reserve it for future
     overlaps_strategy: RipeGeoOverlapsStrategy,
 }
 
-impl RipeGeo {
+impl RipeGeoImpl {
     /// Parse paths like "asia.ipv4.list"
     fn parse_path(path: &Path) -> Option<(Continent, IpType)> {
         let continent_ip_str = match path.file_name()?.to_str()?.rsplit_once('.') {
@@ -360,7 +382,7 @@ impl RipeGeo {
     }
 }
 
-impl GeoTrait for RipeGeo {
+impl GeoTrait for RipeGeoImpl {
     fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {
         match address {
             IpAddr::V4(ip) => self.ipv4.get(ip.into()),

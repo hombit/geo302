@@ -1,7 +1,7 @@
 pub use continent::Continent;
 pub use error::GeoError;
 #[cfg(feature = "ripe-geo")]
-use ripe_geo::{RipeGeo, RipeGeoOverlapsStrategy};
+use ripe_geo::{RipeGeo, RipeGeoImpl, RipeGeoOverlapsStrategy};
 
 mod continent;
 mod error;
@@ -23,6 +23,12 @@ pub enum Geo {
     MaxMindDb(max_mind_db::MaxMindDbGeo),
     #[cfg(feature = "ripe-geo")]
     RipeGeo(RipeGeo),
+}
+
+impl From<RipeGeoImpl> for Geo {
+    fn from(value: RipeGeoImpl) -> Self {
+        Geo::RipeGeo(value.into())
+    }
 }
 
 #[enum_dispatch(Geo)]
@@ -63,23 +69,23 @@ impl TryFrom<GeoConfig> for Geo {
                 Self::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?)
             }
             #[cfg(all(feature = "ripe-geo", not(feature = "ripe-geo-embedded")))]
-            GeoConfig::RipeGeo { path, overlaps } => Self::RipeGeo(RipeGeo::from_folder(
-                &path,
-                overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip),
-            )?),
+            GeoConfig::RipeGeo { path, overlaps } => {
+                RipeGeoImpl::from_folder(&path, overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip))?
+                    .into()
+            }
             #[cfg(feature = "ripe-geo-embedded")]
             GeoConfig::RipeGeo {
                 path: Some(path),
                 overlaps,
-            } => Self::RipeGeo(RipeGeo::from_folder(
-                &path,
-                overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip),
-            )?),
+            } => {
+                RipeGeoImpl::from_folder(&path, overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip))?
+                    .into()
+            }
             #[cfg(feature = "ripe-geo-embedded")]
             GeoConfig::RipeGeo {
                 path: None,
                 overlaps: _,
-            } => Self::RipeGeo(RipeGeo::from_embedded()),
+            } => RipeGeoImpl::from_embedded().into(),
         };
         Ok(slf)
     }
