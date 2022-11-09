@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::collections::btree_map::BTreeMap;
 use thiserror::Error;
 
@@ -15,12 +14,14 @@ where
         Self(BTreeMap::new())
     }
 
+    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.0.clear()
     }
 
     pub fn get(&self, key: K) -> Option<&V> {
         let (&slf_key, (size, value)) = self.0.range(..=key).next_back()?;
+        // slf_key <= key < slf_key + size
         // range guaranties that slf_key <= key
         if key < slf_key + *size {
             Some(value)
@@ -29,6 +30,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub fn contains(&self, key: K) -> bool {
         self.get(key).is_some()
     }
@@ -43,6 +45,7 @@ where
         }
     }
 
+    /// Left-most overlapping interval
     pub fn overlapped_by(&self, key: K, size: S) -> Option<(K, S)> {
         // Some interval's right end is inside the given one
         if let Some(k_s) = self.get_key_size(key) {
@@ -55,6 +58,8 @@ where
             .map(|(k, (s, _v))| (*k, *s))
     }
 
+    #[allow(dead_code)]
+    /// Return true if tree overlaps with a given interval
     pub fn overlaps(&self, key: K, size: S) -> bool {
         self.overlapped_by(key, size).is_some()
     }
@@ -73,10 +78,12 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -86,4 +93,67 @@ where
 pub struct OccupiedError<K, S> {
     pub key: K,
     pub size: S,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clear() {
+        let mut interval_tree = IntervalTreeMap::new();
+        assert_eq!(interval_tree.len(), 0);
+        assert!(interval_tree.is_empty());
+        interval_tree.try_insert(0, 1, 0).unwrap();
+        assert_eq!(interval_tree.len(), 1);
+        assert!(!interval_tree.is_empty());
+        interval_tree.clear();
+        assert_eq!(interval_tree.len(), 0);
+        assert!(interval_tree.is_empty());
+    }
+
+    #[test]
+    fn no_overlap() {
+        let mut interval_tree = IntervalTreeMap::new();
+        interval_tree.try_insert(0, 2, 0).unwrap();
+        interval_tree.try_insert(2, 2, 1).unwrap();
+        interval_tree.try_insert(4, 2, 2).unwrap();
+
+        assert_eq!(interval_tree.get(0), Some(&0));
+        assert_eq!(interval_tree.get(1), Some(&0));
+        assert_eq!(interval_tree.get(2), Some(&1));
+        assert_eq!(interval_tree.get(3), Some(&1));
+        assert_eq!(interval_tree.get(4), Some(&2));
+        assert_eq!(interval_tree.get(5), Some(&2));
+        assert_eq!(interval_tree.get(-1), None);
+        assert_eq!(interval_tree.get(6), None);
+        assert_eq!(interval_tree.get(100), None);
+
+        assert_eq!(interval_tree.get_key_size(0), Some((0, 2)));
+        assert_eq!(interval_tree.get_key_size(1), Some((0, 2)));
+        assert_eq!(interval_tree.get_key_size(2), Some((2, 2)));
+        assert_eq!(interval_tree.get_key_size(3), Some((2, 2)));
+        assert_eq!(interval_tree.get_key_size(4), Some((4, 2)));
+        assert_eq!(interval_tree.get_key_size(5), Some((4, 2)));
+        assert_eq!(interval_tree.get_key_size(-1), None);
+        assert_eq!(interval_tree.get_key_size(6), None);
+        assert_eq!(interval_tree.get_key_size(100), None);
+    }
+
+    #[test]
+    fn overlaps() {
+        let mut interval_tree = IntervalTreeMap::new();
+        interval_tree.try_insert(0, 2, 0).unwrap();
+        interval_tree.try_insert(4, 2, 2).unwrap();
+        assert!(interval_tree.overlaps(0, 1));
+        assert!(interval_tree.overlaps(1, 1));
+        assert!(!interval_tree.overlaps(2, 1));
+        assert!(interval_tree.overlaps(5, 1));
+        assert!(!interval_tree.overlaps(6, 1));
+        assert!(!interval_tree.overlaps(7, 1));
+        assert!(interval_tree.overlaps(1, 2));
+        assert!(interval_tree.overlaps(4, 2));
+        assert!(interval_tree.overlaps(4, 100));
+        assert!(interval_tree.overlaps(0, 6));
+    }
 }
