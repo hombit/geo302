@@ -17,9 +17,9 @@ strip = true
 
 [features]
 maxminddb = ["dep:maxminddb"]
+multi-thread = ["tokio/rt-multi-thread"]
 ripe-geo = []
 ripe-geo-embedded = ["dep:include_dir", "ripe-geo"]
-ripe-geo-autoupdate = ["ripe-geo"]
 
 full = ["maxminddb", "ripe-geo", "ripe-geo-embedded"]
 default = ["maxminddb", "ripe-geo"]

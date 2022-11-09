@@ -1,4 +1,6 @@
-use crate::config::parse_config;
+#[cfg(feature = "multi-thread")]
+use crate::config::ConfigThreads;
+use crate::config::{parse_config, Config};
 use crate::mirror::Mirror;
 use crate::service::Geo302Service;
 
@@ -21,14 +23,7 @@ mod uri_tools;
 #[cfg(not(any(feature = "maxminddb", feature = "ripe-geo")))]
 compile_error!("At least one of geo-IP database features must be enabled");
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> anyhow::Result<()> {
-    let config_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "geo302.toml".to_owned());
-
-    let config = parse_config(config_path)?;
-
+async fn async_main(config: Config) -> anyhow::Result<()> {
     let host = config.host;
 
     simple_logger::init_with_level(config.log_level)?;
@@ -54,8 +49,33 @@ async fn main() -> anyhow::Result<()> {
     let server = Server::bind(&host).serve(make_service);
 
     if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+        log::error!("server error: {}", e);
     }
-
     Err(anyhow::anyhow!("server exited"))
+}
+
+fn main() -> anyhow::Result<()> {
+    let config_path = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "geo302.toml".to_owned());
+
+    let config = parse_config(config_path)?;
+
+    #[cfg(feature = "multi-thread")]
+    let mut runtime_builder = match config.threads {
+        ConfigThreads::Custom(threads) => match threads.into() {
+            1 => tokio::runtime::Builder::new_current_thread(),
+            threads => {
+                let mut builder = tokio::runtime::Builder::new_multi_thread();
+                builder.worker_threads(threads);
+                builder
+            }
+        },
+        ConfigThreads::Cores => tokio::runtime::Builder::new_multi_thread(),
+    };
+    #[cfg(not(feature = "multi-thread"))]
+    let mut runtime_builder = tokio::runtime::Builder::new_current_thread();
+    let runtime = runtime_builder.enable_all().build().unwrap();
+
+    runtime.block_on(async_main(config))
 }

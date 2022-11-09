@@ -6,7 +6,18 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::num::NonZeroU16;
+#[cfg(feature = "multi-thread")]
+use std::num::NonZeroUsize;
 use std::path::Path;
+
+#[cfg(feature = "multi-thread")]
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum ConfigThreads {
+    Custom(NonZeroUsize),
+    #[serde(alias = "cores", alias = "cpus")]
+    Cores,
+}
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -18,10 +29,13 @@ pub struct Config {
     pub ip_headers_recursive: bool,
     #[serde(default = "Config::default_healthcheck_interval")]
     pub healthckeck_interval: NonZeroU16,
-    #[serde(default = "Config::default_log_level")]
-    pub log_level: log::Level,
     #[serde(default, with = "http_serde::header_map")]
     pub response_headers: HeaderMap,
+    #[serde(default = "Config::default_log_level")]
+    pub log_level: log::Level,
+    #[cfg(feature = "multi-thread")]
+    #[serde(default = "Config::default_threads")]
+    pub threads: ConfigThreads,
     pub geoip: GeoConfig,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
@@ -46,6 +60,11 @@ impl Config {
 
     fn default_log_level() -> log::Level {
         log::Level::Info
+    }
+
+    #[cfg(feature = "multi-thread")]
+    fn default_threads() -> ConfigThreads {
+        ConfigThreads::Custom(2.try_into().unwrap())
     }
 }
 
