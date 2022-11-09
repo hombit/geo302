@@ -17,8 +17,10 @@ strip = true
 
 [features]
 maxminddb = ["dep:maxminddb"]
-full = ["maxminddb"]
-default = ["maxminddb"]
+ripe-geo = []
+
+full = ["maxminddb", "ripe-geo"]
+default = ["maxminddb", "ripe-geo"]
 
 [dependencies]
 anyhow = "1"

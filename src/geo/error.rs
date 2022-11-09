@@ -1,3 +1,4 @@
+#[cfg(feature = "ripe-geo")]
 use crate::geo::ripe_geo::RipeGeoDataError;
 
 #[cfg(feature = "maxminddb")]
@@ -11,6 +12,7 @@ pub enum GeoError {
     #[cfg(feature = "maxminddb")]
     #[error(transparent)]
     MaxMindDBError(#[from] MaxMindDBError),
+    #[cfg(feature = "ripe-geo")]
     #[error(transparent)]
     RipeGeo(#[from] RipeGeoDataError),
 }

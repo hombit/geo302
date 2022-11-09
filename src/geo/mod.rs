@@ -1,11 +1,13 @@
 pub use continent::Continent;
 pub use error::GeoError;
+#[cfg(feature = "ripe-geo")]
 use ripe_geo::{RipeGeo, RipeGeoOverlapsStrategy};
 
 mod continent;
 mod error;
 #[cfg(feature = "maxminddb")]
 pub mod max_mind_db;
+#[cfg(feature = "ripe-geo")]
 pub mod ripe_geo;
 
 use enum_dispatch::enum_dispatch;
@@ -19,6 +21,7 @@ use std::path::PathBuf;
 pub enum Geo {
     #[cfg(feature = "maxminddb")]
     MaxMindDb(max_mind_db::MaxMindDbGeo),
+    #[cfg(feature = "ripe-geo")]
     RipeGeo(RipeGeo),
 }
 
@@ -38,6 +41,7 @@ pub enum GeoConfig {
         alias = "Max Mind"
     )]
     MaxMindDb { path: PathBuf },
+    #[cfg(feature = "ripe-geo")]
     #[serde(alias = "ripe-geo", alias = "ripegeo", alias = "ripe geo")]
     RipeGeo {
         path: PathBuf,
@@ -54,6 +58,7 @@ impl TryFrom<GeoConfig> for Geo {
             GeoConfig::MaxMindDb { path } => {
                 Self::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?)
             }
+            #[cfg(feature = "ripe-geo")]
             GeoConfig::RipeGeo { path, overlaps } => Self::RipeGeo(RipeGeo::from_folder(
                 &path,
                 overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip),

@@ -12,10 +12,14 @@ mod config;
 mod geo;
 mod header_tools;
 mod healthcheck;
+#[cfg(feature = "ripe-geo")]
 mod interval_tree;
 mod mirror;
 mod service;
 mod uri_tools;
+
+#[cfg(not(any(feature = "maxminddb", feature = "ripe-geo")))]
+compile_error!("At least one of geo-IP database features must be enabled");
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
