@@ -1,14 +1,48 @@
-use crate::geo::GeoConfig;
+use crate::geo::Geo;
+#[allow(unused_imports)]
+use crate::unavailable::Unavailable;
 use crate::Mirror;
 
 use hyper::HeaderMap;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::num::NonZeroU16;
+use std::num::NonZeroU64;
 #[cfg(feature = "multi-thread")]
 use std::num::NonZeroUsize;
+use std::ops::Deref;
 use std::path::Path;
+use std::time::Duration;
+
+#[derive(Deserialize)]
+#[serde(from = "NonZeroU64")]
+pub struct HealthCheckInterval(Duration);
+
+impl Default for HealthCheckInterval {
+    fn default() -> Self {
+        Self(Duration::from_secs(5))
+    }
+}
+
+impl Deref for HealthCheckInterval {
+    type Target = Duration;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<NonZeroU64> for HealthCheckInterval {
+    fn from(value: NonZeroU64) -> Self {
+        Self(Duration::from_secs(value.get()))
+    }
+}
+
+impl From<HealthCheckInterval> for Duration {
+    fn from(value: HealthCheckInterval) -> Self {
+        value.0
+    }
+}
 
 #[cfg(feature = "multi-thread")]
 #[derive(Deserialize)]
@@ -19,7 +53,18 @@ pub enum ConfigThreads {
     Cores,
 }
 
+#[cfg(feature = "multi-thread")]
+impl Default for ConfigThreads {
+    fn default() -> Self {
+        Self::Custom(2.try_into().unwrap())
+    }
+}
+
+#[cfg(not(feature = "multi-thread"))]
+type ConfigThreads = Unavailable;
+
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "Config::default_host")]
     pub host: SocketAddr,
@@ -27,16 +72,15 @@ pub struct Config {
     pub ip_headers: Vec<String>,
     #[serde(default = "Config::default_ip_headers_recursive")]
     pub ip_headers_recursive: bool,
-    #[serde(default = "Config::default_healthcheck_interval")]
-    pub healthckeck_interval: NonZeroU16,
+    #[serde(default)]
+    pub healthckeck_interval: HealthCheckInterval,
     #[serde(default, with = "http_serde::header_map")]
     pub response_headers: HeaderMap,
     #[serde(default = "Config::default_log_level")]
     pub log_level: log::Level,
-    #[cfg(feature = "multi-thread")]
-    #[serde(default = "Config::default_threads")]
+    #[serde(default)]
     pub threads: ConfigThreads,
-    pub geoip: GeoConfig,
+    pub geoip: Geo,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
 }
@@ -54,17 +98,8 @@ impl Config {
         true
     }
 
-    fn default_healthcheck_interval() -> NonZeroU16 {
-        5.try_into().unwrap()
-    }
-
     fn default_log_level() -> log::Level {
         log::Level::Info
-    }
-
-    #[cfg(feature = "multi-thread")]
-    fn default_threads() -> ConfigThreads {
-        ConfigThreads::Custom(2.try_into().unwrap())
     }
 }
 

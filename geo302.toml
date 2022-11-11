@@ -1,6 +1,6 @@
 host = "0.0.0.0:8000"
 ip_headers = ["x-real-ip", "x-forwarded-for"]
-ip_header_recursive = true
+ip_headers_recursive = true
 healthckeck_interval = 5
 response_headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET" }
 log_level = "info"
@@ -12,6 +12,7 @@ threads = 2
 type = "ripe-geo"
 path = "./ripe-geo/continents"
 overlaps = "skip"
+autoupdate = { url = "https://github.com/cbuijs/ripe-geo/archive/refs/heads/master.tar.gz", interval = 86400 }
 
 [mirrors.sai]
 upstream = "https://sai.fits.ztf.snad.space/"

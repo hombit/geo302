@@ -1,7 +1,7 @@
 pub use continent::Continent;
 pub use error::GeoError;
 #[cfg(feature = "ripe-geo")]
-use ripe_geo::{RipeGeo, RipeGeoImpl, RipeGeoOverlapsStrategy};
+use ripe_geo::{config::RipeGeoConfig, RipeGeo, RipeGeoImpl};
 
 mod continent;
 mod error;
@@ -13,6 +13,7 @@ pub mod ripe_geo;
 use enum_dispatch::enum_dispatch;
 use serde::Deserialize;
 use std::net::IpAddr;
+#[cfg(feature = "maxminddb")]
 use std::path::PathBuf;
 
 #[derive(Deserialize)]
@@ -25,6 +26,7 @@ pub enum Geo {
     RipeGeo(RipeGeo),
 }
 
+#[cfg(feature = "ripe-geo")]
 impl From<RipeGeoImpl> for Geo {
     fn from(value: RipeGeoImpl) -> Self {
         Geo::RipeGeo(value.into())
@@ -34,11 +36,13 @@ impl From<RipeGeoImpl> for Geo {
 #[enum_dispatch(Geo)]
 pub trait GeoTrait: Send + Sync {
     fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError>;
+    fn start_autoupdate(&self) -> bool;
 }
 
 #[derive(Deserialize)]
 #[serde(tag = "type")]
-pub enum GeoConfig {
+#[serde(deny_unknown_fields)]
+enum GeoConfig {
     #[cfg(feature = "maxminddb")]
     #[serde(
         alias = "maxminddb",
@@ -49,44 +53,23 @@ pub enum GeoConfig {
     MaxMindDb { path: PathBuf },
     #[cfg(feature = "ripe-geo")]
     #[serde(alias = "ripe-geo", alias = "ripegeo", alias = "ripe geo")]
-    RipeGeo {
-        #[cfg(feature = "ripe-geo-embedded")]
-        #[serde(default)]
-        path: Option<PathBuf>,
-        #[cfg(not(feature = "ripe-geo-embedded"))]
-        path: PathBuf,
-        overlaps: Option<RipeGeoOverlapsStrategy>,
-    },
+    RipeGeo(RipeGeoConfig),
 }
 
 impl TryFrom<GeoConfig> for Geo {
     type Error = GeoError;
 
     fn try_from(value: GeoConfig) -> Result<Self, Self::Error> {
-        let slf = match value {
+        match value {
             #[cfg(feature = "maxminddb")]
-            GeoConfig::MaxMindDb { path } => {
-                Self::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?)
+            GeoConfig::MaxMindDb { path } => Ok(Self::MaxMindDb(
+                max_mind_db::MaxMindDbGeo::from_file(&path)?,
+            )),
+            #[cfg(feature = "ripe-geo")]
+            GeoConfig::RipeGeo(config) => {
+                let ripe_geo: RipeGeo = config.try_into()?;
+                Ok(ripe_geo.into())
             }
-            #[cfg(all(feature = "ripe-geo", not(feature = "ripe-geo-embedded")))]
-            GeoConfig::RipeGeo { path, overlaps } => {
-                RipeGeoImpl::from_folder(&path, overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip))?
-                    .into()
-            }
-            #[cfg(feature = "ripe-geo-embedded")]
-            GeoConfig::RipeGeo {
-                path: Some(path),
-                overlaps,
-            } => {
-                RipeGeoImpl::from_folder(&path, overlaps.unwrap_or(RipeGeoOverlapsStrategy::Skip))?
-                    .into()
-            }
-            #[cfg(feature = "ripe-geo-embedded")]
-            GeoConfig::RipeGeo {
-                path: None,
-                overlaps: _,
-            } => RipeGeoImpl::from_embedded().into(),
-        };
-        Ok(slf)
+        }
     }
 }

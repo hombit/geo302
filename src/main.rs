@@ -18,6 +18,7 @@ mod healthcheck;
 mod interval_tree;
 mod mirror;
 mod service;
+mod unavailable;
 mod uri_tools;
 
 #[cfg(not(any(feature = "maxminddb", feature = "ripe-geo")))]

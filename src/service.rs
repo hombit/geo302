@@ -8,7 +8,6 @@ use crate::uri_tools::compose_uri;
 use hyper::{header::HeaderMap, Body, Request, Response, StatusCode, Uri};
 use std::net::IpAddr;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -37,7 +36,8 @@ impl Geo302Service {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geoip: geo_config,
+            healthckeck_interval,
+            geoip: geo,
             mirrors: conf_mirrors,
             continents: conf_continents,
             ..
@@ -46,14 +46,14 @@ impl Geo302Service {
         let continent_map =
             ContinentMap::from_mirrors_and_continents(&conf_mirrors, &conf_continents)?;
 
-        let check_interval = Duration::new(config.healthckeck_interval.get().into(), 0);
-        let health_check = HealthCheck::start(continent_map.all_mirrors(), check_interval);
+        let health_check =
+            HealthCheck::start(continent_map.all_mirrors(), healthckeck_interval.into());
 
         Ok(Self {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geo: geo_config.try_into()?,
+            geo,
             continent_map,
             health_check,
         })

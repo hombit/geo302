@@ -52,4 +52,8 @@ impl GeoTrait for MaxMindDbGeo {
             .into();
         geo_name_id.try_into()
     }
+
+    fn start_autoupdate(&self) -> bool {
+        false
+    }
 }

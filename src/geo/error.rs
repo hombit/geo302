@@ -15,4 +15,6 @@ pub enum GeoError {
     #[cfg(feature = "ripe-geo")]
     #[error(transparent)]
     RipeGeo(#[from] RipeGeoDataError),
+    #[error("No ripe-geo data available: embedded data is not compiled in, no path to data specified, autoupdate is disabled or not supported in this build")]
+    RipeGeoConfigNoPath,
 }

@@ -1,16 +1,23 @@
 use crate::geo::{Continent, GeoError, GeoTrait};
 use crate::interval_tree::IntervalTreeMap;
 
-#[cfg(feature = "ripe-geo-embedded")]
-use include_dir::include_dir;
 use serde::Deserialize;
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::io::{BufRead, BufReader, Read};
 use std::net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr};
 use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
 use std::str::{FromStr, Utf8Error};
+#[cfg(feature = "ripe-geo-autoupdate")]
+use std::sync::{Arc, RwLock};
 use thiserror::Error;
+
+pub mod config;
+#[cfg(feature = "ripe-geo-embedded")]
+pub mod embedded;
+#[cfg(feature = "ripe-geo-autoupdate")]
+pub mod updater;
 
 #[derive(Copy, Clone, Deserialize)]
 pub enum RipeGeoOverlapsStrategy {
@@ -18,6 +25,12 @@ pub enum RipeGeoOverlapsStrategy {
     Fail,
     #[serde(alias = "skip")]
     Skip,
+}
+
+impl Default for RipeGeoOverlapsStrategy {
+    fn default() -> Self {
+        Self::Skip
+    }
 }
 
 #[derive(Error, Debug)]
@@ -34,11 +47,23 @@ pub enum RipeGeoDataError {
         path: PathBuf,
         error: std::io::Error,
     },
-    #[error(r#"Eror while attemping to read file "{path}": error"#)]
+    #[error(r#"Eror while attemping to read file "{path}": {error}"#)]
     FileIoError {
         path: PathBuf,
         error: std::io::Error,
     },
+    #[cfg(feature = "ripe-geo-autoupdate")]
+    #[error(r#"Error while reading file "{path}" of tar.gz archive: {error}"#)]
+    ArchiveEntryIoError {
+        path: PathBuf,
+        error: std::io::Error,
+    },
+    #[cfg(feature = "ripe-geo-autoupdate")]
+    #[error(r"Error while reading tar.gz file: {0}")]
+    ArchiveReadError(std::io::Error),
+    #[cfg(feature = "ripe-geo-autoupdate")]
+    #[error(transparent)]
+    DownloadError(#[from] updater::RipeGeoDownloadError),
 }
 
 #[derive(Error, Debug)]
@@ -188,37 +213,66 @@ const ALL_RIPE_GEO_CONTINENTS: [Continent; 6] = [
     Continent::SouthAmerica,
 ];
 
-#[cfg(feature = "ripe-geo-embedded")]
-const RIPE_GEO_CONTINENTS: include_dir::Dir<'_> =
-    include_dir!("$CARGO_MANIFEST_DIR/ripe-geo/continents");
+#[cfg(feature = "ripe-geo-autoupdate")]
+pub struct RipeGeo {
+    inner: Arc<RwLock<RipeGeoImpl>>,
+    overlaps_strategy: RipeGeoOverlapsStrategy,
+    updater: Option<RwLock<updater::RipeGeoUpdater>>,
+}
 
+#[cfg(not(feature = "ripe-geo-autoupdate"))]
 pub struct RipeGeo(RipeGeoImpl);
 
 impl From<RipeGeoImpl> for RipeGeo {
     fn from(value: RipeGeoImpl) -> Self {
-        Self(value)
+        #[cfg(feature = "ripe-geo-autoupdate")]
+        {
+            Self {
+                inner: Arc::new(RwLock::new(value)),
+                overlaps_strategy: RipeGeoOverlapsStrategy::default(),
+                updater: None,
+            }
+        }
+        #[cfg(not(feature = "ripe-geo-autoupdate"))]
+        {
+            Self(value)
+        }
     }
 }
 
 impl GeoTrait for RipeGeo {
     fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {
-        self.0.try_lookup_continent(address)
+        #[cfg(feature = "ripe-geo-autoupdate")]
+        {
+            self.inner.read().unwrap().try_lookup_continent(address)
+        }
+        #[cfg(not(feature = "ripe-geo-autoupdate"))]
+        {
+            self.0.try_lookup_continent(address)
+        }
     }
-}
 
-impl std::ops::Deref for RipeGeo {
-    type Target = RipeGeoImpl;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    fn start_autoupdate(&self) -> bool {
+        #[cfg(feature = "ripe-geo-autoupdate")]
+        {
+            let mut updater = match &self.updater {
+                Some(value) => value,
+                None => return false,
+            }
+            .write()
+            .unwrap();
+            updater.start(self).is_some()
+        }
+        #[cfg(not(feature = "ripe-geo-autoupdate"))]
+        {
+            false
+        }
     }
 }
 
 pub struct RipeGeoImpl {
     ipv4: IntervalTreeMap<u32, Continent>,
     ipv6: IntervalTreeMap<u128, Continent>,
-    #[allow(dead_code)] // we reserve it for future
-    overlaps_strategy: RipeGeoOverlapsStrategy,
 }
 
 impl RipeGeoImpl {
@@ -282,7 +336,7 @@ impl RipeGeoImpl {
     pub fn from_text_files<I, P>(
         it: I,
         overlaps_strategy: RipeGeoOverlapsStrategy,
-    ) -> Result<Self, GeoError>
+    ) -> Result<Self, RipeGeoDataError>
     where
         I: Iterator<Item = Result<(P, Box<dyn Read>), RipeGeoDataError>>,
         P: AsRef<Path>,
@@ -324,19 +378,15 @@ impl RipeGeoImpl {
             .for_each(|warning| log::warn!("{warning}"));
         }
         if !cont_ip_set.is_empty() {
-            return Err(RipeGeoDataError::MissingFiles(cont_ip_set).into());
+            return Err(RipeGeoDataError::MissingFiles(cont_ip_set));
         }
-        Ok(Self {
-            ipv4,
-            ipv6,
-            overlaps_strategy,
-        })
+        Ok(Self { ipv4, ipv6 })
     }
 
     pub fn from_folder(
         dir_path: &Path,
         overlaps_strategy: RipeGeoOverlapsStrategy,
-    ) -> Result<Self, GeoError> {
+    ) -> Result<Self, RipeGeoDataError> {
         let it = std::fs::read_dir(dir_path)
             .map_err(|error| RipeGeoDataError::DirIoError {
                 error,
@@ -369,20 +419,9 @@ impl RipeGeoImpl {
             });
         Self::from_text_files(it, overlaps_strategy)
     }
-
-    #[cfg(feature = "ripe-geo-embedded")]
-    // Since all errors here are related to compile-time issues, we don't need Result and just panic
-    pub fn from_embedded() -> Self {
-        let it = RIPE_GEO_CONTINENTS.files().map(|file| {
-            let reader: Box<dyn Read> = Box::new(file.contents());
-            Ok((file.path(), reader))
-        });
-        Self::from_text_files(it, RipeGeoOverlapsStrategy::Skip)
-            .expect("Recompile geo302 with correct ripe-geo/continents folder embedded")
-    }
 }
 
-impl GeoTrait for RipeGeoImpl {
+impl RipeGeoImpl {
     fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {
         match address {
             IpAddr::V4(ip) => self.ipv4.get(ip.into()),
