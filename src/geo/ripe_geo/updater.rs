@@ -31,7 +31,7 @@ impl From<StatusCode> for RipeGeoDownloadError {
 
 lazy_static! {
     static ref RIPE_GEO_URL: Uri =
-        "https://github.com/cbuijs/ripe-geo/archive/refs/heads/master.tar.gz"
+        "https://github.com/hombit/ripe-geo-history/archive/refs/heads/continents.tar.gz"
             .parse()
             .unwrap();
 }
