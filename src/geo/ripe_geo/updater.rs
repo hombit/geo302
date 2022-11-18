@@ -215,12 +215,8 @@ impl RipeGeoImpl {
             .entries()
             .map_err(RipeGeoDataError::ArchiveReadError)?
             .filter_map(|entry| {
-                let Ok(mut entry) = entry else {
-                    return None;
-                };
-                let Ok(path) = entry.path() else {
-                    return None;
-                };
+                let mut entry = entry.ok()?;
+                let path = entry.path().ok()?;
                 let path = path.into_owned();
                 let mut vec = Vec::with_capacity(entry.size() as usize);
                 if let Err(error) = entry.read_to_end(&mut vec) {
