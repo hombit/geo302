@@ -18,6 +18,11 @@ pub struct RipeGeoConfig {
 }
 
 impl RipeGeoConfig {
+    /// Parse config with respect to Cargo features
+    /// - Load from path is specified
+    /// - If autoupdate is enabled, download from web
+    /// - If not (or download failed), but embedded is enabled, load from binary
+    /// - Return error otherwise
     fn ripe_geo_impl(&self) -> Result<RipeGeoImpl, GeoError> {
         // autoupdate could be unused
         #[allow(unused_variables)]
@@ -26,19 +31,27 @@ impl RipeGeoConfig {
             overlaps,
             autoupdate,
         } = self;
-        // We would like to move to the None branch when this stabilized
+        // We would like to move to the None branch when this stabilizes
         // https://github.com/rust-lang/rust/issues/15701
         #[allow(unreachable_code)]
         match path {
             Some(path) => Ok(RipeGeoImpl::from_folder(path, *overlaps)?),
             None => {
-                #[cfg(feature = "ripe-geo-embedded")]
-                return Ok(RipeGeoImpl::from_embedded());
                 #[cfg(feature = "ripe-geo-autoupdate")]
-                {
+                let from_url = {
                     let uri = autoupdate.uri().ok_or(GeoError::RipeGeoConfigNoPath)?;
-                    return Ok(RipeGeoImpl::from_uri(uri, *overlaps)?);
+                    RipeGeoImpl::from_uri(uri, *overlaps)
+                };
+                #[cfg(feature = "ripe-geo-embedded")]
+                {
+                    #[cfg(feature = "ripe-geo-autoupdate")]
+                    if let Ok(ripe_geo_impl) = from_url {
+                        return Ok(ripe_geo_impl);
+                    }
+                    return Ok(RipeGeoImpl::from_embedded());
                 }
+                #[cfg(feature = "ripe-geo-autoupdate")]
+                return from_url.map_err(Into::into);
                 Err(GeoError::RipeGeoConfigNoPath)
             }
         }
