@@ -61,7 +61,7 @@ jobs:
     - run: |
         for FEATURES in $(python3.11 .ci/generate-feature-combos.py); do
           echo $FEATURES
-          cargo build +${{ steps.get_msrv.outputs.msrv }} --no-default-features --features="$FEATURES"
+          cargo +${{ steps.get_msrv.outputs.msrv }} build --no-default-features --features="$FEATURES"
         done
 
   audit-check:
