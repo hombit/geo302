@@ -140,12 +140,16 @@ pub enum ContinentMapConfigError {
 mod tests {
     use super::*;
 
-    use crate::config::Config;
+    #[derive(Debug, Deserialize)]
+    struct MirrorsContinentsConfig {
+        mirrors: HashMap<String, Mirror>,
+        continents: HashMap<String, Vec<String>>,
+    }
 
-    pub fn continent_map_from_config(
-        config: &Config,
+    fn continent_map_from_config(
+        config: &MirrorsContinentsConfig,
     ) -> Result<ContinentMap, ContinentMapConfigError> {
-        let Config {
+        let MirrorsContinentsConfig {
             mirrors,
             continents,
             ..
@@ -156,31 +160,23 @@ mod tests {
     #[test]
     fn empty_config() {
         let s = r#"
-        [geoip]
-        type = "ripe-geo"
-        path = "ripe-geo/continents"
-        
         [mirrors]
         
         [continents]
         "#;
-        let config: Config = toml::from_str(s).unwrap();
+        let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
         assert!(continent_map_from_config(&config).is_err());
     }
 
     #[test]
     fn empty_continents() {
         let s = r#"
-        [geoip]
-        type = "ripe-geo"
-        path = "ripe-geo/continents"
-        
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
         
         [continents]
         "#;
-        let config: Config = toml::from_str(s).unwrap();
+        let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
         assert_eq!(
             continent_map_from_config(&config).unwrap_err(),
             ContinentMapConfigError::NoDefaultContinent
@@ -190,16 +186,12 @@ mod tests {
     #[test]
     fn empty_mirrors() {
         let s = r#"
-        [geoip]
-        type = "ripe-geo"
-        path = "ripe-geo/continents"
-        
         [mirrors]
         
         [continents]
         default = []
         "#;
-        let config: Config = toml::from_str(s).unwrap();
+        let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
         assert_eq!(
             continent_map_from_config(&config).unwrap_err(),
             ContinentMapConfigError::NoMirrors
@@ -209,17 +201,13 @@ mod tests {
     #[test]
     fn no_default_continent() {
         let s = r#"
-        [geoip]
-        type = "ripe-geo"
-        path = "ripe-geo/continents"
-        
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
         
         [continents]
         Europe = ["mirror"]
         "#;
-        let config: Config = toml::from_str(s).unwrap();
+        let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
         assert_eq!(
             continent_map_from_config(&config).unwrap_err(),
             ContinentMapConfigError::NoDefaultContinent
@@ -229,17 +217,13 @@ mod tests {
     #[test]
     fn wrong_mirror() {
         let s = r#"
-        [geoip]
-        type = "ripe-geo"
-        path = "ripe-geo/continents"
-        
         [mirrors]
         mirror1 = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
         
         [continents]
         default = ["mirror2"]
         "#;
-        let config: Config = toml::from_str(s).unwrap();
+        let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
         assert!(matches!(
             continent_map_from_config(&config).unwrap_err(),
             ContinentMapConfigError::MirrorUnknown { .. }
@@ -249,10 +233,6 @@ mod tests {
     #[test]
     fn wrong_continent_name() {
         let s = r#"
-        [geoip]
-        type = "ripe-geo"
-        path = "ripe-geo/continents"
-        
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
         
@@ -260,7 +240,7 @@ mod tests {
         default = ["mirror"]
         Zeus = ["mirror"]
         "#;
-        let config: Config = toml::from_str(s).unwrap();
+        let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
         assert!(matches!(
             continent_map_from_config(&config).unwrap_err(),
             ContinentMapConfigError::ContinentUnknown { .. }
