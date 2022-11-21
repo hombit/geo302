@@ -236,7 +236,7 @@ impl RipeGeoImpl {
     ) -> Result<Self, RipeGeoDataError> {
         let https = HttpsConnector::new();
         let client = Client::builder().build::<_, Body>(https);
-        let handle = handle.unwrap_or_else(|| Handle::current());
+        let handle = handle.unwrap_or_else(Handle::current);
         handle.block_on(Self::download(&client, uri, overlaps_strategy))
     }
 }
