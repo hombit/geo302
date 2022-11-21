@@ -2,7 +2,7 @@
 use crate::config::ConfigThreads;
 use crate::config::{parse_config, Config};
 use crate::mirror::Mirror;
-use crate::service::Geo302Service;
+use crate::service::{Geo302Service, InvalidConfigError};
 
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
@@ -29,7 +29,10 @@ async fn async_main(config: Config) -> anyhow::Result<()> {
 
     simple_logger::init_with_level(config.log_level)?;
 
-    let geo302_service = Arc::new(Geo302Service::from_config(config)?);
+    let geo302_service = tokio::task::spawn_blocking(move || -> Result<_, InvalidConfigError> {
+        Ok(Arc::new(Geo302Service::from_config(config)?))
+    })
+    .await??;
 
     let make_service = make_service_fn(move |connection: &AddrStream| {
         let socket_remote_ip = connection.remote_addr().ip();

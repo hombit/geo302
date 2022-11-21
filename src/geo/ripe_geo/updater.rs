@@ -234,10 +234,7 @@ impl RipeGeoImpl {
     ) -> Result<Self, RipeGeoDataError> {
         let https = HttpsConnector::new();
         let client = Client::builder().build::<_, Body>(https);
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        rt.block_on(Self::download(&client, uri, overlaps_strategy))
+        let handle = tokio::runtime::Handle::current();
+        handle.block_on(Self::download(&client, uri, overlaps_strategy))
     }
 }

@@ -10,7 +10,7 @@ threads = 2
 type = "ripe-geo"
 path = "./ripe-geo/continents"
 overlaps = "skip"
-# auttoupdate is either not supported by current build or turned off by default
+# autoupdate is either not supported by current build or turned off by default
 # autoupdate = false
 
 [mirrors.sai]

@@ -10,7 +10,7 @@ threads = 2
 type = "ripe-geo"
 # We don't need path if we'd like to use embedded DB
 # path = "./ripe-geo/continents"
-# auttoupdate is either not supported by current build or turned off by default
+# autoupdate is either not supported by current build or turned off by default
 # autoupdate = false
 
 [mirrors.sai]

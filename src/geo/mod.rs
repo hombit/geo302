@@ -59,7 +59,9 @@ impl GeoConfig {
         match self {
             #[cfg(feature = "maxminddb")]
             Self::MaxMindDb { path } => {
-                Ok(Geo::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?))
+                let geo = Geo::MaxMindDb(max_mind_db::MaxMindDbGeo::from_file(&path)?);
+                log::info!("Maxmind DB is loaded from {path:?}");
+                Ok(geo)
             }
             #[cfg(feature = "ripe-geo")]
             Self::RipeGeo(config) => {

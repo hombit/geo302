@@ -35,12 +35,20 @@ impl RipeGeoConfig {
         // https://github.com/rust-lang/rust/issues/15701
         #[allow(unreachable_code)]
         match path {
-            Some(path) => Ok(RipeGeoImpl::from_folder(path, *overlaps)?),
+            Some(path) => {
+                let ripe_geo_impl = RipeGeoImpl::from_folder(path, *overlaps)?;
+                log::info!("ripe-geo database is loaded from {path:?}");
+                Ok(ripe_geo_impl)
+            }
             None => {
                 #[cfg(feature = "ripe-geo-autoupdate")]
                 let from_url = {
                     let uri = autoupdate.uri().ok_or(GeoError::RipeGeoConfigNoPath)?;
-                    RipeGeoImpl::from_uri(uri, *overlaps)
+                    let result = RipeGeoImpl::from_uri(uri, *overlaps);
+                    if result.is_ok() {
+                        log::info!("ripe-geo database is loaded from {uri}")
+                    }
+                    result
                 };
                 #[cfg(feature = "ripe-geo-embedded")]
                 {
@@ -48,7 +56,9 @@ impl RipeGeoConfig {
                     if let Ok(ripe_geo_impl) = from_url {
                         return Ok(ripe_geo_impl);
                     }
-                    return Ok(RipeGeoImpl::from_embedded());
+                    let ripe_geo_impl = RipeGeoImpl::from_embedded();
+                    log::info!("ripe-geo database is loaded from embedded");
+                    return Ok(ripe_geo_impl);
                 }
                 #[cfg(feature = "ripe-geo-autoupdate")]
                 return from_url.map_err(Into::into);
