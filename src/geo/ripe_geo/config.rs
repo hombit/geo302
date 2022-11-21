@@ -44,7 +44,7 @@ impl RipeGeoConfig {
                 #[cfg(feature = "ripe-geo-autoupdate")]
                 let from_url = {
                     let uri = autoupdate.uri().ok_or(GeoError::RipeGeoConfigNoPath)?;
-                    let result = RipeGeoImpl::from_uri(uri, *overlaps);
+                    let result = RipeGeoImpl::from_uri(uri, *overlaps, None);
                     if result.is_ok() {
                         log::info!("ripe-geo database is loaded from {uri}")
                     }

@@ -10,6 +10,7 @@ use hyper_tls::HttpsConnector;
 use lazy_static::lazy_static;
 use std::io::Cursor;
 use std::time::Duration;
+use tokio::runtime::Handle;
 
 #[derive(Debug, Error)]
 pub enum RipeGeoDownloadError {
@@ -231,10 +232,11 @@ impl RipeGeoImpl {
     pub fn from_uri(
         uri: &Uri,
         overlaps_strategy: RipeGeoOverlapsStrategy,
+        handle: Option<Handle>,
     ) -> Result<Self, RipeGeoDataError> {
         let https = HttpsConnector::new();
         let client = Client::builder().build::<_, Body>(https);
-        let handle = tokio::runtime::Handle::current();
+        let handle = handle.unwrap_or_else(|| Handle::current());
         handle.block_on(Self::download(&client, uri, overlaps_strategy))
     }
 }
