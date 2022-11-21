@@ -4,7 +4,6 @@ ip_headers_recursive = true
 healthckeck_interval = 5
 response_headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET" }
 log_level = "info"
-threads = 2
 
 [geoip]
 type = "ripe-geo"
