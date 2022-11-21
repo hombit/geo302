@@ -18,7 +18,10 @@ enum RequestError {
     Timeout(#[from] tokio::time::error::Elapsed),
 }
 
-pub struct HealthCheck {}
+pub struct HealthCheck {
+    #[allow(dead_code)] // we don't use it now
+    handles: Vec<tokio::task::JoinHandle<()>>,
+}
 
 impl HealthCheck {
     async fn get_status<C>(client: &Client<C>, uri: Uri) -> Result<StatusCode, RequestError>
@@ -32,34 +35,41 @@ impl HealthCheck {
     pub fn start(mirrors: &[Mirror], interval: Duration) -> Self {
         let https = HttpsConnector::new();
         let http_client = Client::builder().build::<_, hyper::Body>(https);
-        for mirror in mirrors {
-            let http_client = http_client.clone();
-            let mirror = mirror.clone();
-            tokio::spawn(async move {
-                loop {
-                    let status = Self::get_status(&http_client, mirror.healthcheck.clone()).await;
-                    // Use Result.is_ok_and when stabilizes
-                    // https://github.com/rust-lang/rust/issues/93050
-                    let new_available = match status {
-                        Ok(success) => success.is_success(),
-                        Err(_) => false,
-                    };
-                    mirror
-                        .available
-                        .store(new_available, atomic::Ordering::Release);
-                    match (new_available, status) {
-                        (true, Ok(_)) => log::info!("{} is alive", mirror.healthcheck),
-                        (false, Ok(status)) => {
-                            log::warn!("{} is unavailable: {}", mirror.healthcheck, status)
+        let handles = mirrors
+            .iter()
+            .map(|mirror| {
+                let http_client = http_client.clone();
+                let mirror = mirror.clone();
+                tokio::spawn(async move {
+                    loop {
+                        let status = Self::get_status(&http_client, mirror.healthcheck.clone());
+                        // Use Result.is_ok_and when stabilizes
+                        // https://github.com/rust-lang/rust/issues/93050
+                        let new_available = match status {
+                            Ok(success) => success.is_success(),
+                            Err(_) => false,
+                        };
+                        mirror
+                            .available
+                            .store(new_available, atomic::Ordering::Release);
+                        match (new_available, status) {
+                            (true, Ok(_)) => log::info!("{} is alive", mirror.healthcheck),
+                            (false, Ok(status)) => {
+                                log::warn!("{} is unavailable: {}", mirror.healthcheck, status)
+                            }
+                            (_, Err(e)) => {
+                                log::warn!(
+                                    "{} is unavailable: {}",
+                                    mirror.healthcheck,
+                                    e.to_string()
+                                )
+                            }
                         }
-                        (_, Err(e)) => {
-                            log::warn!("{} is unavailable: {}", mirror.healthcheck, e.to_string())
-                        }
+                        tokio::time::sleep(interval).await;
                     }
-                    tokio::time::sleep(interval).await;
-                }
-            });
-        }
-        Self {}
+                })
+            })
+            .collect();
+        Self { handles }
     }
 }

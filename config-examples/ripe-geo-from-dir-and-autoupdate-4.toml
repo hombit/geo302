@@ -11,7 +11,7 @@ type = "ripe-geo"
 path = "./ripe-geo/continents"
 overlaps = "skip"
 # auttoupdate must be supported in the build to make this seeting work
-autoupdate = { interval = "86400" }
+autoupdate = { interval = 86400 }
 
 [mirrors.sai]
 upstream = "https://sai.fits.ztf.snad.space/"

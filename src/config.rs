@@ -1,5 +1,5 @@
-use crate::geo::Geo;
-#[allow(unused_imports)]
+use crate::geo::GeoConfig;
+#[cfg(not(feature = "multi-thread"))]
 use crate::unavailable::Unavailable;
 use crate::Mirror;
 
@@ -80,7 +80,7 @@ pub struct Config {
     pub log_level: log::Level,
     #[serde(default)]
     pub threads: ConfigThreads,
-    pub geoip: Geo,
+    pub geoip: GeoConfig,
     pub mirrors: HashMap<String, Mirror>,
     pub continents: HashMap<String, Vec<String>>,
 }

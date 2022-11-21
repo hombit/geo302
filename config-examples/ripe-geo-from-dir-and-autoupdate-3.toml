@@ -8,10 +8,11 @@ threads = 2
 
 [geoip]
 type = "ripe-geo"
-path = "./ripe-geo/continents"
+#path = "./ripe-geo/continents"
 overlaps = "skip"
 # auttoupdate must be supported in the build to make this seeting work
-autoupdate = { url = "https://github.com/hombit/ripe-geo-history/archive/refs/heads/continents.tar.gz", interval = "86400" }
+#autoupdate = { url = "https://github.com/hombit/ripe-geo-history/archive/refs/heads/continents.tar.gz", interval = 86400 }
+autoupdate = true
 
 [mirrors.sai]
 upstream = "https://sai.fits.ztf.snad.space/"

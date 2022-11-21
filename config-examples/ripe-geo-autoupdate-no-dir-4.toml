@@ -10,7 +10,7 @@ threads = 2
 type = "ripe-geo"
 overlaps = "skip"
 # Interval is in seconds
-autoupdate = { interval = "86400" }
+autoupdate = { interval = 86400 }
 
 [mirrors.sai]
 upstream = "https://sai.fits.ztf.snad.space/"
