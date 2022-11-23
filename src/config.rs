@@ -197,6 +197,32 @@ mod tests {
     );
 
     load_config!(
+        load_ripe_geo_from_dir_and_autoupdate_1,
+        "ripe-geo-from-dir-and-autoupdate-1.toml",
+        "ripe-geo-autoupdate"
+    );
+    load_config!(
+        load_ripe_geo_from_dir_and_autoupdate_2,
+        "ripe-geo-from-dir-and-autoupdate-2.toml",
+        "ripe-geo-autoupdate"
+    );
+    load_config!(
+        load_ripe_geo_from_dir_and_autoupdate_3,
+        "ripe-geo-from-dir-and-autoupdate-3.toml",
+        "ripe-geo-autoupdate"
+    );
+    load_config!(
+        load_ripe_geo_from_dir_and_autoupdate_4,
+        "ripe-geo-from-dir-and-autoupdate-4.toml",
+        "ripe-geo-autoupdate"
+    );
+    load_config!(
+        load_ripe_geo_from_dir_and_autoupdate_5,
+        "ripe-geo-from-dir-and-autoupdate-5.toml",
+        "ripe-geo-autoupdate"
+    );
+
+    load_config!(
         load_ripe_geo_from_dir_no_autoupdate_1,
         "ripe-geo-from-dir-no-autoupdate-1.toml",
         "ripe-geo"
