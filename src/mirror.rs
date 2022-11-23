@@ -161,7 +161,7 @@ mod tests {
     fn empty_config() {
         let s = r#"
         [mirrors]
-        
+
         [continents]
         "#;
         let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
@@ -173,7 +173,7 @@ mod tests {
         let s = r#"
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
-        
+
         [continents]
         "#;
         let config: MirrorsContinentsConfig = toml::from_str(s).unwrap();
@@ -187,7 +187,7 @@ mod tests {
     fn empty_mirrors() {
         let s = r#"
         [mirrors]
-        
+
         [continents]
         default = []
         "#;
@@ -203,7 +203,7 @@ mod tests {
         let s = r#"
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
-        
+
         [continents]
         Europe = ["mirror"]
         "#;
@@ -219,7 +219,7 @@ mod tests {
         let s = r#"
         [mirrors]
         mirror1 = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
-        
+
         [continents]
         default = ["mirror2"]
         "#;
@@ -235,7 +235,7 @@ mod tests {
         let s = r#"
         [mirrors]
         mirror = { upstream = "http://example.com", healthcheck = "http://example.com/ping" }
-        
+
         [continents]
         default = ["mirror"]
         Zeus = ["mirror"]

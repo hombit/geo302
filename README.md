@@ -27,12 +27,12 @@ Database support can be turned on or off by compile-time features (flags).
 `geo302` build can be configured to have more functionality in the cost of the executable size and larger dependency graph.
 All features are additive and could activate other features.
 
-For example the following command will compile `./target/release/geo302` with a support of Maxmind DB only: 
+For example the following command will compile `./target/release/geo302` with a support of Maxmind DB only:
 ```bash
 cargo build --release --no-default-features --features=maxminddb
 ```
 
-| Feature               | in `default` | includes | Description                                                                                                     | 
+| Feature               | in `default` | includes | Description                                                                                                     |
 |-----------------------|-------------|----------|-----------------------------------------------------------------------------------------------------------------|
 | `maxminddb`           | ✓ | — | Maxmind DB support                                                                                              |
 | `multi-thread`        | ✓ | — | Mutli-thread support and `threads` condiguration option                                                         |
@@ -66,7 +66,7 @@ path = "<PATH>" # .mmdb geolite2 file, get it from https://dev.maxmind.com
 
 # Options for "ripe-geo"
 # The database can be loaded from directory (if path option specified), from embedded (compile-time
-# feature=ripe-gep-embedded required) or downloaded (if autoupdate option is not false) automatically 
+# feature=ripe-gep-embedded required) or downloaded (if autoupdate option is not false) automatically
 path = "<PATH>" # "continents" folder of ripe-geo database, get it from https://github.com/cbuijs/ripe-geo
 overlaps = "skip" # ripe-geo database has overlaping IP ranges, the default is to ignore it with "skip" value
 autoupdate = false # Whether to automatically download and update the database
@@ -88,13 +88,13 @@ another_mirror = { upstream = "<UPSTREAM2_URL>", healthcheck = "<HEALTHCHECK2_UR
 # - the mandatory "default" entry for the cases of unknown/unspecified client location
 # For each location the first healthy mirror is used
 [continents]
-# Africa = 
-# Asia = 
-# Europe = 
-# NorthAmerica = 
-# Oceania = 
-# SouthAmerica = 
-# Antarctica = 
+# Africa =
+# Asia =
+# Europe =
+# NorthAmerica =
+# Oceania =
+# SouthAmerica =
+# Antarctica =
 default = ["<some_mirror>", "<another_mirror>"]
 
 ```
