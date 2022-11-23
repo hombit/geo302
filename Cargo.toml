@@ -22,8 +22,8 @@ ripe-geo = []
 ripe-geo-autoupdate = ["dep:flate2", "dep:lazy_static", "dep:tar", "multi-thread", "ripe-geo"]
 ripe-geo-embedded = ["dep:include_dir", "ripe-geo"]
 
-full = ["maxminddb", "ripe-geo", "ripe-geo-autoupdate", "ripe-geo-embedded"]
-default = ["maxminddb", "ripe-geo", "ripe-geo-autoupdate"]
+full = ["maxminddb", "ripe-geo-autoupdate", "ripe-geo-embedded"]
+default = ["maxminddb", "ripe-geo-autoupdate"]
 
 [dependencies]
 anyhow = "1"
