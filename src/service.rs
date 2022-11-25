@@ -1,3 +1,4 @@
+use crate::canonical_ip::CanonicalIpAddr;
 use crate::config::Config;
 use crate::geo::{Geo, GeoError, GeoTrait};
 use crate::header_tools::client_ip;
@@ -93,7 +94,9 @@ impl Geo302Service {
         socket_ip_addr: IpAddr,
         request: &Request<Body>,
     ) -> Result<Response<Body>, ServiceError> {
-        let remote_ip = self.remote_ip(request.headers(), socket_ip_addr);
+        let remote_ip = self
+            .remote_ip(request.headers(), socket_ip_addr)
+            .to_canonical_ip();
         let mirror = self.mirror(remote_ip)?;
         let request_path = request
             .uri()

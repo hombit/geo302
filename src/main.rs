@@ -10,6 +10,9 @@ use hyper::{Body, Request, Server};
 use std::convert::Infallible;
 use std::sync::Arc;
 
+// Remove after IpAddr::to_canonical stabilizes
+// https://github.com/rust-lang/rust/issues/27709
+mod canonical_ip;
 mod config;
 mod geo;
 mod header_tools;
