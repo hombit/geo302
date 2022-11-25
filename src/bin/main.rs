@@ -1,31 +1,13 @@
 #[cfg(feature = "multi-thread")]
-use crate::config::ConfigThreads;
-use crate::config::{parse_config, Config};
-use crate::mirror::Mirror;
-use crate::service::{Geo302Service, InvalidConfigError};
+use geo302::config::ConfigThreads;
+use geo302::config::{parse_config, Config};
+use geo302::service::{log_response, make_error_response, Geo302Service, InvalidConfigError};
 
 use hyper::server::conn::AddrStream;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Server};
 use std::convert::Infallible;
 use std::sync::Arc;
-
-// Remove after IpAddr::to_canonical stabilizes
-// https://github.com/rust-lang/rust/issues/27709
-mod canonical_ip;
-mod config;
-mod geo;
-mod header_tools;
-mod healthcheck;
-#[cfg(feature = "ripe-geo")]
-mod interval_tree;
-mod mirror;
-mod service;
-mod unavailable;
-mod uri_tools;
-
-#[cfg(not(any(feature = "maxminddb", feature = "ripe-geo")))]
-compile_error!("At least one of geo-IP database features must be enabled");
 
 async fn async_main(config: Config) -> anyhow::Result<()> {
     let host = config.host;
@@ -45,8 +27,8 @@ async fn async_main(config: Config) -> anyhow::Result<()> {
             async move {
                 let response = geo302_service
                     .response(socket_remote_ip, &request)
-                    .unwrap_or_else(service::make_error_response);
-                service::log_response(socket_remote_ip, &request, &response);
+                    .unwrap_or_else(make_error_response);
+                log_response(socket_remote_ip, &request, &response);
                 Ok::<_, Infallible>(response)
             }
         });

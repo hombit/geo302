@@ -1,7 +1,7 @@
 use crate::geo::GeoConfig;
+use crate::mirror::Mirror;
 #[cfg(not(feature = "multi-thread"))]
 use crate::unavailable::Unavailable;
-use crate::Mirror;
 
 use hyper::HeaderMap;
 use serde::Deserialize;

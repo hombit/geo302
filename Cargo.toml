@@ -10,6 +10,14 @@ repository = "https://github.com/hombit/geo302"
 keywords = ["geoIP", "http-proxy"]
 categories = ["web-programming::http-server"]
 
+[lib]
+name = "geo302"
+path = "src/lib.rs"
+
+[[bin]]
+name = "geo302"
+path = "src/bin/main.rs"
+
 [profile.release]
 codegen-units = 1
 lto = true

@@ -1,4 +1,4 @@
-use crate::Mirror;
+use crate::mirror::Mirror;
 
 use hyper::client::Client;
 use hyper::http::uri::Uri;
