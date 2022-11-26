@@ -419,6 +419,15 @@ impl RipeGeoImpl {
             });
         Self::from_text_files(it, overlaps_strategy)
     }
+
+    pub fn into_interval_tree_maps(
+        self,
+    ) -> (
+        IntervalTreeMap<u32, Continent>,
+        IntervalTreeMap<u128, Continent>,
+    ) {
+        (self.ipv4, self.ipv6)
+    }
 }
 
 impl RipeGeoImpl {

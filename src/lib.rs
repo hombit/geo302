@@ -5,11 +5,11 @@ compile_error!("At least one of geo-IP database features must be enabled");
 // https://github.com/rust-lang/rust/issues/27709
 mod canonical_ip;
 pub mod config;
-mod geo;
+pub mod geo;
 mod header_tools;
 mod healthcheck;
 #[cfg(feature = "ripe-geo")]
-mod interval_tree;
+pub mod interval_tree;
 mod mirror;
 pub mod service;
 mod unavailable;

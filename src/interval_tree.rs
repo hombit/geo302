@@ -2,6 +2,7 @@ use std::collections::btree_map::BTreeMap;
 use thiserror::Error;
 
 /// Non-overlapping interval tree based on [BTreeMap]
+#[derive(Clone, Debug)]
 pub struct IntervalTreeMap<K, V, S = K>(BTreeMap<K, (S, V)>);
 
 impl<K, V, S> IntervalTreeMap<K, V, S>
@@ -14,7 +15,6 @@ where
         Self(BTreeMap::new())
     }
 
-    #[allow(dead_code)]
     pub fn clear(&mut self) {
         self.0.clear()
     }
@@ -30,7 +30,6 @@ where
         }
     }
 
-    #[allow(dead_code)]
     pub fn contains(&self, key: K) -> bool {
         self.get(key).is_some()
     }
@@ -58,7 +57,6 @@ where
             .map(|(k, (s, _v))| (*k, *s))
     }
 
-    #[allow(dead_code)]
     /// Return true if tree overlaps with a given interval
     pub fn overlaps(&self, key: K, size: S) -> bool {
         self.overlapped_by(key, size).is_some()
@@ -78,14 +76,29 @@ where
         }
     }
 
-    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
-    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+}
+
+impl<K, V, S> Default for IntervalTreeMap<K, V, S>
+where
+    K: std::ops::Add<S, Output = K> + Ord,
+    K: Copy + std::fmt::Debug,
+    S: Copy,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<K, V, S> From<IntervalTreeMap<K, V, S>> for BTreeMap<K, (S, V)> {
+    fn from(value: IntervalTreeMap<K, V, S>) -> Self {
+        value.0
     }
 }
 
