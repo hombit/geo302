@@ -21,8 +21,10 @@ repos:
         name: cargo fmt
     -   id: cargo-check
         name: cargo check
+        args: ["--features=full", "--all-targets"]
     -   id: clippy
         name: cargo clippy
+        args: ["--features=full", "--all-targets"]
 
 # pre-commit.ci settings
 # Skip rust things due to
