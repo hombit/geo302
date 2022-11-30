@@ -14,20 +14,11 @@ repos:
     -   id: check-case-conflict # checks for files that would conflict in case-insensitive filesystems
     # Git
     -   id: check-merge-conflict # checks for files that contain merge conflict strings
--   repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
+-   repo: local
     hooks:
-    -   id: fmt
+    -   id: cargo-fmt
         name: cargo fmt
-    -   id: cargo-check
-        name: cargo check
-        args: ["--features=full", "--all-targets"]
-    -   id: clippy
-        name: cargo clippy
-        args: ["--features=full", "--all-targets"]
-
-# pre-commit.ci settings
-# Skip rust things due to
-# https://github.com/pre-commit-ci/issues/issues/89
-ci:
-    skip: [clippy, cargo-check, fmt]
+        language: rust
+        entry: cargo
+        args: ["fmt", "--"]
+        types: [rust]
