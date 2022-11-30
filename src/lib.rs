@@ -9,7 +9,7 @@ pub mod geo;
 mod header_tools;
 mod healthcheck;
 #[cfg(feature = "ripe-geo")]
-pub mod interval_tree;
+pub mod intervals;
 mod mirror;
 pub mod service;
 mod unavailable;

@@ -340,7 +340,6 @@ dependencies = [
  "hyper",
  "hyper-tls",
  "include_dir",
- "itertools",
  "lazy_static",
  "log",
  "maxminddb",

@@ -59,7 +59,6 @@ toml = "0.5"
 [dev-dependencies]
 criterion = "0.4"
 include_dir = { version = "0.7", features = ["glob"] }
-itertools = "0.10"
 
 [[bench]]
 name = "benchmark"

@@ -1,5 +1,5 @@
 use crate::geo::{Continent, GeoError, GeoTrait};
-use crate::interval_tree::IntervalTreeMap;
+use crate::intervals::{IntervalBTreeMap, IntervalVec, Intervals};
 
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -271,8 +271,8 @@ impl GeoTrait for RipeGeo {
 }
 
 pub struct RipeGeoImpl {
-    ipv4: IntervalTreeMap<u32, Continent>,
-    ipv6: IntervalTreeMap<u128, Continent>,
+    ipv4: IntervalVec<u32, Continent>,
+    ipv6: IntervalVec<u128, Continent>,
 }
 
 impl RipeGeoImpl {
@@ -289,7 +289,7 @@ impl RipeGeoImpl {
     }
 
     fn insert_file<Ip>(
-        tree: &mut IntervalTreeMap<Ip::UInt, Continent>,
+        tree: &mut IntervalBTreeMap<Ip::UInt, Continent>,
         reader: Box<dyn Read>,
         continent: Continent,
         overlaps_strategy: RipeGeoOverlapsStrategy,
@@ -341,8 +341,8 @@ impl RipeGeoImpl {
         I: Iterator<Item = Result<(P, Box<dyn Read>), RipeGeoDataError>>,
         P: AsRef<Path>,
     {
-        let mut ipv4 = IntervalTreeMap::new();
-        let mut ipv6 = IntervalTreeMap::new();
+        let mut ipv4 = IntervalBTreeMap::new();
+        let mut ipv6 = IntervalBTreeMap::new();
         let mut cont_ip_set = {
             let mut set = HashSet::new();
             for continent in ALL_RIPE_GEO_CONTINENTS {
@@ -380,7 +380,10 @@ impl RipeGeoImpl {
         if !cont_ip_set.is_empty() {
             return Err(RipeGeoDataError::MissingFiles(cont_ip_set));
         }
-        Ok(Self { ipv4, ipv6 })
+        Ok(Self {
+            ipv4: ipv4.into(),
+            ipv6: ipv6.into(),
+        })
     }
 
     pub fn from_folder(
@@ -420,13 +423,21 @@ impl RipeGeoImpl {
         Self::from_text_files(it, overlaps_strategy)
     }
 
-    pub fn into_interval_tree_maps(
+    pub fn into_interval_btree_maps(
         self,
     ) -> (
-        IntervalTreeMap<u32, Continent>,
-        IntervalTreeMap<u128, Continent>,
+        IntervalBTreeMap<u32, Continent>,
+        IntervalBTreeMap<u128, Continent>,
     ) {
+        (self.ipv4.into(), self.ipv6.into())
+    }
+
+    pub fn into_interval_vecs(self) -> (IntervalVec<u32, Continent>, IntervalVec<u128, Continent>) {
         (self.ipv4, self.ipv6)
+    }
+
+    pub fn into_intervals(self) -> (Intervals<u32, Continent>, Intervals<u128, Continent>) {
+        (self.ipv4.into(), self.ipv6.into())
     }
 }
 
