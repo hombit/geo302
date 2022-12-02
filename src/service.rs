@@ -1,5 +1,6 @@
+use crate::canonical_ip::CanonicalIpAddr;
 use crate::config::Config;
-use crate::geo::{Geo, GeoError};
+use crate::geo::{Geo, GeoError, GeoTrait};
 use crate::header_tools::client_ip;
 use crate::healthcheck::HealthCheck;
 use crate::mirror::{ContinentMap, ContinentMapConfigError, Mirror};
@@ -8,7 +9,6 @@ use crate::uri_tools::compose_uri;
 use hyper::{header::HeaderMap, Body, Request, Response, StatusCode, Uri};
 use std::net::IpAddr;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -37,7 +37,8 @@ impl Geo302Service {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geolite2: geolite2_path,
+            healthcheck: health_check_config,
+            geoip: geo_config,
             mirrors: conf_mirrors,
             continents: conf_continents,
             ..
@@ -46,14 +47,16 @@ impl Geo302Service {
         let continent_map =
             ContinentMap::from_mirrors_and_continents(&conf_mirrors, &conf_continents)?;
 
-        let check_interval = Duration::new(config.healthckeck_interval.get().into(), 0);
-        let health_check = HealthCheck::start(continent_map.all_mirrors(), check_interval);
+        let health_check = health_check_config.start(continent_map.all_mirrors());
+
+        let geo = geo_config.load()?;
+        geo.start_autoupdate();
 
         Ok(Self {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            geo: Geo::from_file(geolite2_path)?,
+            geo,
             continent_map,
             health_check,
         })
@@ -90,7 +93,9 @@ impl Geo302Service {
         socket_ip_addr: IpAddr,
         request: &Request<Body>,
     ) -> Result<Response<Body>, ServiceError> {
-        let remote_ip = self.remote_ip(request.headers(), socket_ip_addr);
+        let remote_ip = self
+            .remote_ip(request.headers(), socket_ip_addr)
+            .to_canonical_ip();
         let mirror = self.mirror(remote_ip)?;
         let request_path = request
             .uri()
@@ -142,8 +147,8 @@ pub fn log_response(socket_ip_addr: IpAddr, request: &Request<Body>, response: &
 
 #[derive(Debug, Error)]
 pub enum InvalidConfigError {
-    #[error("{0:?}")]
+    #[error(transparent)]
     ContinentMapConfigError(#[from] ContinentMapConfigError),
-    #[error("{0:?}")]
+    #[error(transparent)]
     GeoError(#[from] GeoError),
 }

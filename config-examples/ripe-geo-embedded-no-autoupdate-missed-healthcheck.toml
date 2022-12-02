@@ -1,0 +1,31 @@
+host = "0.0.0.0:8000"
+ip_headers = ["x-real-ip", "x-forwarded-for"]
+ip_headers_recursive = true
+response_headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET" }
+log_level = "info"
+threads = 2
+
+[geoip]
+type = "ripe-geo"
+# We don't need path if we'd like to use embedded DB
+# path = "./ripe-geo/continents"
+# autoupdate is either not supported by current build or turned off by default
+autoupdate = false
+
+[mirrors.sai]
+upstream = "https://sai.fits.ztf.snad.space/"
+healthcheck = "https://sai.fits.ztf.snad.space/products/"
+
+[mirrors.uci]
+upstream = "https://uci.fits.ztf.snad.space/"
+healthcheck = "https://uci.fits.ztf.snad.space/products/"
+
+[continents]
+Africa = ["sai", "uci"]
+Asia = ["sai", "uci"]
+Europe = ["sai", "uci"]
+NorthAmerica = ["uci", "sai"]
+Oceania = ["uci", "sai"]
+SouthAmerica = ["uci", "sai"]
+Antarctica = ["uci", "sai"]
+default = ["sai", "uci"]

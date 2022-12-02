@@ -1,6 +1,6 @@
 name: Test
 
-on: 
+on:
   push:
   pull_request:
   schedule:
@@ -12,33 +12,61 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: cargo fmt -- --check
+
   cargo-clippy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: cargo clippy --all-targets -- -D warnings
+      with:
+        submodules: true
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: |
+        for FEATURES in $(python3.11 .ci/generate-feature-combos.py); do
+          echo $FEATURES
+          cargo clippy --all-targets --no-default-features --features="$FEATURES" -- -D warnings
+        done
+
   cargo-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - run: cargo test
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: |
+        for FEATURES in $(python3.11 .ci/generate-feature-combos.py); do
+          echo $FEATURES
+          cargo test --no-default-features --features="$FEATURES"
+        done
+
   msrv-cargo-build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: true
     - name: Get minimum supported Rust version
       run: echo "::set-output name=msrv::$(grep '^rust-version = ' Cargo.toml | grep -o '[0-9.]\+')"
       id: get_msrv
     - uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ steps.get_msrv.outputs.msrv }}
-    - run: cargo +${{ steps.get_msrv.outputs.msrv }} build --all-targets
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: |
+        for FEATURES in $(python3.11 .ci/generate-feature-combos.py); do
+          echo $FEATURES
+          cargo +${{ steps.get_msrv.outputs.msrv }} build --no-default-features --features="$FEATURES"
+        done
+
   audit-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - run: cargo install cargo-audit
       - run: cargo audit
-

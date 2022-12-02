@@ -7,26 +7,78 @@ Client's IP is determined using proxy headers like `X-FORWARDED-FOR` with a fall
 
 The main use case of `geo302` is redirecting a user to the closest server to minimize download time of large files.
 
-## Start
+## Quick start
 
-- Download [geolite2 geoIP database](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)
 - Edit configuration file `geo302.toml`
 - `cargo run --release -- ./geo302.toml`
 
+## Geo-IP databases
+
+`geo302` supports two databases: proprietary [Maxmind DB](https://dev.maxmind.com)
+and [ripe-geo](https://github.com/cbuijs/ripe-geo) based on RIPE, GEONAMES and IPDENY.
+A fork of the ripe-geo database is available as a git submodule of this repository,
+`geo302` can be built with this database embedded into the executable.
+`geo302` also supports automatically updates to the most recent version of this database.
+
+Database support can be turned on or off by compile-time features (flags).
+
+## Compile-time features
+
+`geo302` build can be configured to have more functionality in the cost of the executable size and larger dependency graph.
+All features are additive and could activate other features.
+
+For example the following command will compile `./target/release/geo302` with a support of Maxmind DB only:
+```bash
+cargo build --release --no-default-features --features=maxminddb
+```
+
+| Feature               | in `default` | includes | Description                                                                                                     |
+|-----------------------|-------------|----------|-----------------------------------------------------------------------------------------------------------------|
+| `maxminddb`           | ✓ | — | Maxmind DB support                                                                                              |
+| `multi-thread`        | ✓ | — | Mutli-thread support and `threads` condiguration option                                                         |
+| `ripe-geo`            | ✓ | — | ripe-geo DB support, if no `ripe-geo-*` options specified, then DB can be loaded from filesystem only           |
+| `ripe-geo-autoupdate` | ✓ | `multi-thread`, `ripe-geo` | Loading and autoupdating of the ripe-geo DB from the web                                                        |
+| `ripe-geo-embedded`   | | `ripe-geo` | Compiles ripe-geo DB into `geo302` executable, user needs no local or web ripe-geo distribution to be available |                                                   |
+| `default`             | ✓ | `maxminddb`, `ripe-geo-autoupdate`                            | Default feature set, adds no functionality itself                                                               |
+| `full`                | | `maxminddb`, `ripe-geo-autoupdate`, `ripe-geo-embedded`       | Activates all features, adds no functionality itself                                                            |
+
 ## Configuration
 
-See an example of the configuration in `geo302.toml`.
+See examples of the configuration in `config-examples` directory.
 
-Here we present a configuration where the optional entries have the default values:
+Here we present a configuration for the default compile-time feature set, optional entries have the default values:
 
 ```toml
-geolite2 = "<PATH>" # .mmdb geolite2 file, get it from http://dev.maxmind.com
 host = "127.0.0.1:8080" # address to listen
 ip_headers = ["x-forwarded-for"] # optional headers to get client's IP, the first available is used
-ip_header_recursive = true # true: get the first ip in the header, false: get the last one
-healthckeck_interval = 5 # healthcheck interval in seconds
+ip_header_recursive = true # each haeder could have multiple IPs. true: get the first ip in the header, false: get the last one
 log_level = "info" # logging level
-response_headers = { } # a pairs of header key-values to add to the server reply
+response_headers = { <header>: "<VALUE>" } # a pairs of header key-values to add to the server reply
+threads = 2 # number of threads to use, requires compile-time support. Special value "cores" means number of available CPU cores
+
+# Health-check settings
+[healthcheck]
+interval = 5 # sleep time between check requests in seconds
+timeout = 3 # request timeout in seconds
+
+# Geo-IP database configuration
+[geoip]
+type = "<TYPE>" # type of database to use, "maxminddb" and "ripe-geo" are supported
+
+# Options for type = "maxminddb"
+path = "<PATH>" # .mmdb geolite2 file, get it from https://dev.maxmind.com
+
+# Options for type = "ripe-geo"
+# The database can be loaded from directory (if path option specified), from embedded (compile-time
+# feature=ripe-gep-embedded required) or downloaded (if autoupdate option is not false) automatically
+path = "<PATH>" # "continents" folder of ripe-geo database, get it from https://github.com/cbuijs/ripe-geo
+overlaps = "skip" # ripe-geo database has overlaping IP ranges, the default is to ignore it with "skip" value
+autoupdate = false # Whether to automatically download and update the database
+# autoupdate = true # is equivalent to:
+# [geoip.autoupdate]
+# url = "https://github.com/hombit/ripe-geo-history/archive/refs/heads/continents.tar.gz" # only .tar.gz is supported
+# interval = 86400 # update cadence in seconds
+
 
 # List of mirrors, both upstream and healthcheck keys are required
 # If requested URL is <host>/<path>, then redirect URL is <UPSTREAM_URL>/<path>
@@ -34,18 +86,19 @@ response_headers = { } # a pairs of header key-values to add to the server reply
 some_mirror = { upstream = "<UPSTREAM_URL>", healthcheck = "<HEALTHCHECK_URL>" }
 another_mirror = { upstream = "<UPSTREAM2_URL>", healthcheck = "<HEALTHCHECK2_URL>" }
 
-# List of locations:
+
+# List of locations
 # - some subset of continents
 # - the mandatory "default" entry for the cases of unknown/unspecified client location
 # For each location the first healthy mirror is used
 [continents]
-# Africa = 
-# Asia = 
-# Europe = 
-# NorthAmerica = 
-# Oceania = 
-# SouthAmerica = 
-# Antarctica = 
+# Africa =
+# Asia =
+# Europe =
+# NorthAmerica =
+# Oceania =
+# SouthAmerica =
+# Antarctica =
 default = ["<some_mirror>", "<another_mirror>"]
 
 ```

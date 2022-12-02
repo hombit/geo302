@@ -1,0 +1,3 @@
+[submodule "ripe-geo"]
+	path = ripe-geo
+	url = https://github.com/hombit/ripe-geo-history

@@ -1,0 +1,24 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+    -   id: trailing-whitespace # trims trailing whitespace
+    -   id: end-of-file-fixer # ensures that a file is either empty, or ends with one newline
+    -   id: check-yaml
+    -   id: check-toml
+    -   id: check-added-large-files
+    -   id: mixed-line-ending # replaces or checks mixed line ending
+    -   id: check-symlinks # checks for symlinks which do not point to anything
+    -   id: check-case-conflict # checks for files that would conflict in case-insensitive filesystems
+    # Git
+    -   id: check-merge-conflict # checks for files that contain merge conflict strings
+-   repo: local
+    hooks:
+    -   id: cargo-fmt
+        name: cargo fmt
+        language: rust
+        entry: cargo
+        args: ["fmt", "--"]
+        types: [rust]
