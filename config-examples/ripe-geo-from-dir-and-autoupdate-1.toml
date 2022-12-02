@@ -1,10 +1,13 @@
 host = "0.0.0.0:8000"
 ip_headers = ["x-real-ip", "x-forwarded-for"]
 ip_headers_recursive = true
-healthckeck_interval = 5
 response_headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET" }
 log_level = "info"
 threads = 2
+
+[healthcheck]
+interval = 5
+timeout = 3
 
 [geoip]
 type = "ripe-geo"

@@ -52,10 +52,14 @@ Here we present a configuration for the default compile-time feature set, option
 host = "127.0.0.1:8080" # address to listen
 ip_headers = ["x-forwarded-for"] # optional headers to get client's IP, the first available is used
 ip_header_recursive = true # each haeder could have multiple IPs. true: get the first ip in the header, false: get the last one
-healthckeck_interval = 5 # healthcheck interval in seconds
 log_level = "info" # logging level
 response_headers = { <header>: "<VALUE>" } # a pairs of header key-values to add to the server reply
 threads = 2 # number of threads to use, requires compile-time support. Special value "cores" means number of available CPU cores
+
+# Health-check settings
+[healthcheck]
+interval = 5 # sleep time between check requests in seconds
+timeout = 3 # request timeout in seconds
 
 # Geo-IP database configuration
 [geoip]
@@ -64,7 +68,7 @@ type = "<TYPE>" # type of database to use, "maxminddb" and "ripe-geo" are suppor
 # Options for type = "maxminddb"
 path = "<PATH>" # .mmdb geolite2 file, get it from https://dev.maxmind.com
 
-# Options for "ripe-geo"
+# Options for type = "ripe-geo"
 # The database can be loaded from directory (if path option specified), from embedded (compile-time
 # feature=ripe-gep-embedded required) or downloaded (if autoupdate option is not false) automatically
 path = "<PATH>" # "continents" folder of ripe-geo database, get it from https://github.com/cbuijs/ripe-geo

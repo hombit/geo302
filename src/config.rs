@@ -1,4 +1,5 @@
 use crate::geo::GeoConfig;
+use crate::healthcheck::HealthCheckConfig;
 use crate::mirror::Mirror;
 #[cfg(not(feature = "multi-thread"))]
 use crate::unavailable::Unavailable;
@@ -7,45 +8,12 @@ use hyper::HeaderMap;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::num::NonZeroU64;
 #[cfg(feature = "multi-thread")]
 use std::num::NonZeroUsize;
-use std::ops::Deref;
 use std::path::Path;
-use std::time::Duration;
-
-#[derive(Deserialize)]
-#[serde(from = "NonZeroU64")]
-pub struct HealthCheckInterval(Duration);
-
-impl Default for HealthCheckInterval {
-    fn default() -> Self {
-        Self(Duration::from_secs(5))
-    }
-}
-
-impl Deref for HealthCheckInterval {
-    type Target = Duration;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl From<NonZeroU64> for HealthCheckInterval {
-    fn from(value: NonZeroU64) -> Self {
-        Self(Duration::from_secs(value.get()))
-    }
-}
-
-impl From<HealthCheckInterval> for Duration {
-    fn from(value: HealthCheckInterval) -> Self {
-        value.0
-    }
-}
 
 #[cfg(feature = "multi-thread")]
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ConfigThreads {
     Custom(NonZeroUsize),
@@ -63,7 +31,7 @@ impl Default for ConfigThreads {
 #[cfg(not(feature = "multi-thread"))]
 type ConfigThreads = Unavailable;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "Config::default_host")]
@@ -73,7 +41,7 @@ pub struct Config {
     #[serde(default = "Config::default_ip_headers_recursive")]
     pub ip_headers_recursive: bool,
     #[serde(default)]
-    pub healthckeck_interval: HealthCheckInterval,
+    pub healthcheck: HealthCheckConfig,
     #[serde(default, with = "http_serde::header_map")]
     pub response_headers: HeaderMap,
     #[serde(default = "Config::default_log_level")]
@@ -128,7 +96,7 @@ mod tests {
             let file = entry.as_file().unwrap();
             let toml_string = file.contents_utf8().unwrap();
             let result: Result<Config, _> = toml::from_str(toml_string);
-            assert!(result.is_ok());
+            assert!(result.is_ok(), "{result:?}");
         }
     }
 
@@ -142,18 +110,20 @@ mod tests {
         ($name: ident, $file: expr, $($feature: expr $(,)?)+) => {
             #[test]
             fn $name() {
+                #[allow(unused_variables)]
+                let result = load_from_example_config($file);
                 #[cfg(all(
                     $(
                         feature = $feature,
                     )*
                 ))]
-                assert!(load_from_example_config($file).is_ok(), "must be Ok");
+                assert!(result.is_ok(), "must be Ok, got: {result:?}");
                 #[cfg(not(any(
                     $(
                         feature = $feature,
                     )*
                 )))]
-                assert!(load_from_example_config($file).is_err(), "must be Err");
+                assert!(result.is_err(), "must be Err, got: {result:?}");
             }
         };
     }
@@ -192,6 +162,12 @@ mod tests {
     load_config!(
         load_ripe_geo_embedded_no_autoupdate_2,
         "ripe-geo-embedded-no-autoupdate-2.toml",
+        "ripe-geo-autoupdate",
+        "ripe-geo-embedded"
+    );
+    load_config!(
+        ripe_geo_embedded_no_autoupdate_missed_healthcheck,
+        "ripe-geo-embedded-no-autoupdate-missed-healthcheck.toml",
         "ripe-geo-autoupdate",
         "ripe-geo-embedded"
     );

@@ -37,7 +37,7 @@ pub trait GeoTrait: Send + Sync {
     fn start_autoupdate(&self) -> bool;
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(tag = "type")]
 #[serde(deny_unknown_fields)]
 pub enum GeoConfig {

@@ -7,7 +7,7 @@ use crate::unavailable::Unavailable;
 #[cfg(feature = "ripe-geo-autoupdate")]
 use hyper::http::Uri;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct RipeGeoConfig {
     #[serde(default)]
     path: Option<PathBuf>,
@@ -83,7 +83,7 @@ impl TryInto<RipeGeo> for RipeGeoConfig {
 }
 
 #[cfg(feature = "ripe-geo-autoupdate")]
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(untagged)]
 enum RipeGeoAutoupdateConfig {
     Boolean(bool),

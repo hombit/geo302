@@ -22,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **breaking** Configuration schema is changed: mandatory `geoip` entry is added, `geolite2` entry is replaced with `geoip.path`
+- **breaking** Configuration schema: mandatory `geoip` entry is added, `geolite2` entry is replaced with `geoip.path`
+- **breaking** Configuration schema: `healthcheck_interval` integer is replaced with `healthcheck = {interval = <SECONDS>, timeout = <SECONDS>}` dictionary
 - `maxminddb` dependency is optional now
 
 ### Deprecated

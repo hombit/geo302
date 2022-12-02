@@ -11,6 +11,7 @@ mod healthcheck;
 #[cfg(feature = "ripe-geo")]
 pub mod intervals;
 mod mirror;
+mod non_zero_duration;
 pub mod service;
 mod unavailable;
 mod uri_tools;

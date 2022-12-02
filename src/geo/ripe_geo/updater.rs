@@ -1,6 +1,7 @@
 use super::*;
 
-use core::num::NonZeroU64;
+use crate::non_zero_duration::NonZeroDuration;
+
 use hyper::body::{Body, Bytes};
 use hyper::client::connect::Connect;
 use hyper::client::Client;
@@ -39,7 +40,7 @@ lazy_static! {
 
 const RIPE_GEO_UPDATE_INTERVAL_SECONDS: u64 = 86400;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(from = "RipeGeoUpdaterConfig")]
 pub struct RipeGeoUpdater {
     interval: Duration,
@@ -60,8 +61,8 @@ impl RipeGeoUpdater {
         &RIPE_GEO_URL
     }
 
-    pub fn default_interval() -> Duration {
-        Duration::from_secs(RIPE_GEO_UPDATE_INTERVAL_SECONDS)
+    pub fn default_interval() -> NonZeroDuration {
+        NonZeroDuration::from_secs(RIPE_GEO_UPDATE_INTERVAL_SECONDS).unwrap()
     }
 }
 
@@ -71,10 +72,10 @@ impl Default for RipeGeoUpdater {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct RipeGeoUpdaterConfig {
-    #[serde(default)]
-    interval: UpdaterIntervalConfig,
+    #[serde(default = "RipeGeoUpdater::default_interval")]
+    interval: NonZeroDuration,
     #[serde(
         default = "RipeGeoUpdater::default_uri",
         alias = "url",
@@ -86,33 +87,17 @@ struct RipeGeoUpdaterConfig {
 impl From<RipeGeoUpdaterConfig> for RipeGeoUpdater {
     fn from(config: RipeGeoUpdaterConfig) -> Self {
         Self {
-            interval: config.interval.0,
+            interval: config.interval.into(),
             uri: config.uri,
             handle: None,
         }
     }
 }
 
-#[derive(Deserialize)]
-#[serde(from = "NonZeroU64")]
-struct UpdaterIntervalConfig(Duration);
-
-impl Default for UpdaterIntervalConfig {
-    fn default() -> Self {
-        Self(RipeGeoUpdater::default_interval())
-    }
-}
-
-impl From<NonZeroU64> for UpdaterIntervalConfig {
-    fn from(value: NonZeroU64) -> Self {
-        Self(Duration::from_secs(value.get()))
-    }
-}
-
 impl RipeGeoUpdater {
-    pub fn new(interval: Duration, uri: Uri) -> Self {
+    pub fn new(interval: impl Into<Duration>, uri: Uri) -> Self {
         Self {
-            interval,
+            interval: interval.into(),
             uri,
             handle: None,
         }

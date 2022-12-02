@@ -5,14 +5,12 @@ response_headers = { Access-Control-Allow-Origin = "*", Access-Control-Allow-Met
 log_level = "info"
 threads = 2
 
-[healthcheck]
-interval = 5
-timeout = 3
-
 [geoip]
 type = "ripe-geo"
-overlaps = "skip"
-autoupdate = true
+# We don't need path if we'd like to use embedded DB
+# path = "./ripe-geo/continents"
+# autoupdate is either not supported by current build or turned off by default
+autoupdate = false
 
 [mirrors.sai]
 upstream = "https://sai.fits.ztf.snad.space/"

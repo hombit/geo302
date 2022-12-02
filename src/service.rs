@@ -37,7 +37,7 @@ impl Geo302Service {
             ip_headers,
             ip_headers_recursive,
             response_headers,
-            healthckeck_interval,
+            healthcheck: health_check_config,
             geoip: geo_config,
             mirrors: conf_mirrors,
             continents: conf_continents,
@@ -47,8 +47,7 @@ impl Geo302Service {
         let continent_map =
             ContinentMap::from_mirrors_and_continents(&conf_mirrors, &conf_continents)?;
 
-        let health_check =
-            HealthCheck::start(continent_map.all_mirrors(), healthckeck_interval.into());
+        let health_check = health_check_config.start(continent_map.all_mirrors());
 
         let geo = geo_config.load()?;
         geo.start_autoupdate();

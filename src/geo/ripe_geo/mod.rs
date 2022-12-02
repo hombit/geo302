@@ -19,7 +19,7 @@ pub mod embedded;
 #[cfg(feature = "ripe-geo-autoupdate")]
 pub mod updater;
 
-#[derive(Copy, Clone, Deserialize)]
+#[derive(Copy, Clone, Deserialize, Debug)]
 pub enum RipeGeoOverlapsStrategy {
     #[serde(alias = "fail")]
     Fail,
