@@ -28,8 +28,8 @@ impl HealthCheck {
     where
         C: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
     {
-        let response = tokio::time::timeout(TIMEOUT, client.get(uri)).await?;
-        Ok(response?.status())
+        let response = tokio::time::timeout(TIMEOUT, client.get(uri)).await??;
+        Ok(response.status())
     }
 
     pub fn start(mirrors: &[Mirror], interval: Duration) -> Self {
@@ -42,7 +42,8 @@ impl HealthCheck {
                 let mirror = mirror.clone();
                 tokio::spawn(async move {
                     loop {
-                        let status = Self::get_status(&http_client, mirror.healthcheck.clone());
+                        let status =
+                            Self::get_status(&http_client, mirror.healthcheck.clone()).await;
                         // Use Result.is_ok_and when stabilizes
                         // https://github.com/rust-lang/rust/issues/93050
                         let new_available = match status {
