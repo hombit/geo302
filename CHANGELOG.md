@@ -13,12 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`ripe-geo`] Git submodule for database embedding and tests
 - Cargo features for detailed compile-time configuration
 - Optional multi-threading support, it is primary needed by `ripe-geo` autoupdating feature
-- `enum_dispatch` 0.3 dependency
-- `flate2` 1 optional dependency
-- `http-serde` 1.1 dependency
-- `include_dir` 0.7 optional dependency
-- `lazy-static` 1 optional dependency
-- `tar` 0.4 optional dependency
+- `enum_dispatch` v0.3 dependency
+- `flate2` v1 optional dependency
+- `http-serde` v1.1 dependency
+- `include_dir` v0.7 optional dependency
+- `lazy-static` v1 optional dependency
+- `tar` v0.4 optional dependency
 
 ### Changed
 
