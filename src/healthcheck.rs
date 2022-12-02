@@ -1,13 +1,34 @@
 use crate::Mirror;
 
 use hyper::client::Client;
+use hyper::http::uri::Uri;
+use hyper::StatusCode;
 use hyper_tls::HttpsConnector;
 use std::sync::atomic;
 use std::time::Duration;
+use thiserror::Error;
+
+const TIMEOUT: Duration = Duration::new(5, 0);
+
+#[derive(Debug, Error)]
+enum RequestError {
+    #[error(transparent)]
+    Http(#[from] hyper::Error),
+    #[error("Connection timeout")]
+    Timeout(#[from] tokio::time::error::Elapsed),
+}
 
 pub struct HealthCheck {}
 
 impl HealthCheck {
+    async fn get_status<C>(client: &Client<C>, uri: Uri) -> Result<StatusCode, RequestError>
+    where
+        C: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
+    {
+        let response = tokio::time::timeout(TIMEOUT, client.get(uri)).await?;
+        Ok(response?.status())
+    }
+
     pub fn start(mirrors: &[Mirror], interval: Duration) -> Self {
         let https = HttpsConnector::new();
         let http_client = Client::builder().build::<_, hyper::Body>(https);
@@ -16,10 +37,7 @@ impl HealthCheck {
             let mirror = mirror.clone();
             tokio::spawn(async move {
                 loop {
-                    let status = http_client
-                        .get(mirror.healthcheck.clone())
-                        .await
-                        .map(|response| response.status());
+                    let status = Self::get_status(&http_client, mirror.healthcheck.clone()).await;
                     // Use Result.is_ok_and when stabilizes
                     // https://github.com/rust-lang/rust/issues/93050
                     let new_available = match status {
