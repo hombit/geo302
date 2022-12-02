@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Minimum supported Rust version (MSRV) is introduced, we support build with Rust toolchain 1.59+
+—
 
 ### Changed
 
-- `simple_logger` 2.3 -> 4.0
+—
 
 ### Deprecated
 
@@ -25,11 +25,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Healthcheck could freeze waiting HTTP response infinitely
+—
 
 ### Security
 
 —
+
+## [0.1.4] 2022-12-02
+
+### Added
+
+- Minimum supported Rust version (MSRV) is introduced, we support build with Rust toolchain 1.59+
+
+### Changed
+
+- `simple_logger` 2.3 -> 4.0
+
+### Fixed
+
+- Healthcheck could freeze waiting HTTP response infinitely
 
 ## [0.1.3] 2022-10-20
 
