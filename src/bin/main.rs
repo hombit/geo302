@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<()> {
         .nth(1)
         .unwrap_or_else(|| "geo302.toml".to_owned());
 
-    let config = parse_config(config_path)?;
+    let config = parse_config(&config_path)?;
 
     #[cfg(feature = "multi-thread")]
     let mut runtime_builder = match config.threads {
