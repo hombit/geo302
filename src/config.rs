@@ -10,7 +10,8 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 #[cfg(feature = "multi-thread")]
 use std::num::NonZeroUsize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use thiserror::Error;
 
 #[cfg(feature = "multi-thread")]
 #[derive(Deserialize, Debug)]
@@ -71,9 +72,33 @@ impl Config {
     }
 }
 
-pub fn parse_config<P: AsRef<Path>>(path: P) -> anyhow::Result<Config> {
-    let toml_string = std::fs::read_to_string(path)?;
-    let config: Config = toml::from_str(&toml_string)?;
+#[derive(Error, Debug)]
+pub enum ConfigFileError {
+    #[error(r#"Error reading file "{path}": {error}"#)]
+    IoError {
+        error: std::io::Error,
+        path: PathBuf,
+    },
+    #[error(r#"Error parsing file "{path}": {error}"#)]
+    ParseError {
+        error: toml::de::Error,
+        path: PathBuf,
+    },
+}
+
+pub fn parse_config<P>(path: P) -> Result<Config, ConfigFileError>
+where
+    P: AsRef<Path> + Copy,
+{
+    let toml_string = std::fs::read_to_string(path).map_err(|error| ConfigFileError::IoError {
+        error,
+        path: path.as_ref().to_owned(),
+    })?;
+    let config: Config =
+        toml::from_str(&toml_string).map_err(|error| ConfigFileError::ParseError {
+            error,
+            path: path.as_ref().to_owned(),
+        })?;
     Ok(config)
 }
 
