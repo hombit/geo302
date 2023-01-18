@@ -9,22 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- [`ripe-geo`](https://github.com/cbuijs/ripe-geo) Geo-IP database support with auto-updates, embedding and more
-- [`ripe-geo`] Git submodule for database embedding and tests
-- Cargo features for detailed compile-time configuration
-- Optional multi-threading support, it is primary needed by `ripe-geo` autoupdating feature
-- `enum_dispatch` v0.3 dependency
-- `flate2` v1 optional dependency
-- `http-serde` v1.1 dependency
-- `include_dir` v0.7 optional dependency
-- `lazy-static` v1 optional dependency
-- `tar` v0.4 optional dependency
+--
 
 ### Changed
 
-- **breaking** Configuration schema: mandatory `geoip` entry is added, `geolite2` entry is replaced with `geoip.path`
-- **breaking** Configuration schema: `healthcheck_interval` integer is replaced with `healthcheck = {interval = <SECONDS>, timeout = <SECONDS>}` dictionary
-- `maxminddb` dependency is optional now
+--
 
 ### Deprecated
 
