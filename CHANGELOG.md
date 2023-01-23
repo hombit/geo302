@@ -29,8 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- tokio version is updated in `Cargo.lock` for [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001)
+--
 
+## [0.2.1] 2023-01-23
+
+### Security
+
+- `tokio` 0.23.0 -> 0.24.2 in `Cargo.lock` for [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001)
 
 ## [0.2.0] 2022-12-23
 
