@@ -60,7 +60,7 @@ mod tests {
         let ip_client = IpAddr::V4(Ipv4Addr::new(128, 174, 199, 60));
         let ip_proxy = IpAddr::V4(Ipv4Addr::new(80, 94, 184, 70));
         let ip_header_name = "X-FORWARDED-FOR";
-        let request_header_value = format!("{}, {}", ip_client, ip_proxy);
+        let request_header_value = format!("{ip_client}, {ip_proxy}");
         let request_headers = {
             let mut headers = HeaderMap::new();
             headers.insert(ip_header_name, request_header_value.parse().unwrap());
@@ -83,7 +83,7 @@ mod tests {
         let ip_proxy1 = IpAddr::V4(Ipv4Addr::new(80, 94, 184, 70));
         let ip_proxy2 = IpAddr::V4(Ipv4Addr::new(52, 0, 14, 116));
         let ip_header_name = "X-FORWARDED-FOR";
-        let request_header_value = format!("{}, {}, {}", ip_client, ip_proxy1, ip_proxy2);
+        let request_header_value = format!("{ip_client}, {ip_proxy1}, {ip_proxy2}");
         let request_headers = {
             let mut headers = HeaderMap::new();
             headers.insert(ip_header_name, request_header_value.parse().unwrap());
@@ -109,13 +109,11 @@ mod tests {
             let mut headers = HeaderMap::new();
             headers.insert(
                 "X-REAL-IP",
-                format!("{}, {}", ip_client, ip_nginx_proxy)
-                    .parse()
-                    .unwrap(),
+                format!("{ip_client}, {ip_nginx_proxy}").parse().unwrap(),
             );
             headers.insert(
                 "X-FORWARDED-FOR",
-                format!("{}, {}", ip_nginx_proxy, ip_other_proxy)
+                format!("{ip_nginx_proxy}, {ip_other_proxy}")
                     .parse()
                     .unwrap(),
             );
