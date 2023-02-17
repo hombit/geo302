@@ -1,7 +1,7 @@
 # geo302 — HTTP redirect proxy with healthcheck
 
 `geo302` is not an actual proxy, but a "pathfinder", which responses with [`302 Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/302) redirecting the HTTP-client to the actual URL.
-We use [geolite2 geoIP](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) database to determine user's location and select the most suitable upstream for this location.
+It can use [geolite2 geoIP](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) or [ripe-geo](https://github.com/cbuijs/ripe-geo) databases to determine cleint's location and select the most suitable upstream for this location.
 Client's IP is determined using proxy headers like `X-FORWARDED-FOR` with a fallback to the socket IP address.
 `geo302` performs active health checks against all upstreams pinging them every few seconds.
 
@@ -17,7 +17,7 @@ The main use case of `geo302` is redirecting a user to the closest server to min
 `geo302` supports two databases: proprietary [Maxmind DB](https://dev.maxmind.com)
 and [ripe-geo](https://github.com/cbuijs/ripe-geo) based on RIPE, GEONAMES and IPDENY.
 A fork of the ripe-geo database is available as a git submodule of this repository,
-`geo302` can be built with this database embedded into the executable.
+the binary may be built with this database embedded into the executable.
 `geo302` also supports automatically updates to the most recent version of this database.
 
 Database support can be turned on or off by compile-time features (flags).
@@ -38,7 +38,7 @@ cargo build --release --no-default-features --features=maxminddb
 | `multi-thread`        | ✓ | — | Mutli-thread support and `threads` condiguration option                                                         |
 | `ripe-geo`            | ✓ | — | ripe-geo DB support, if no `ripe-geo-*` options specified, then DB can be loaded from filesystem only           |
 | `ripe-geo-autoupdate` | ✓ | `multi-thread`, `ripe-geo` | Loading and autoupdating of the ripe-geo DB from the web                                                        |
-| `ripe-geo-embedded`   | | `ripe-geo` | Compiles ripe-geo DB into `geo302` executable, user needs no local or web ripe-geo distribution to be available |                                                   |
+| `ripe-geo-embedded`   | | `ripe-geo` | Compiles ripe-geo DB into `geo302` executable, it needs no local or web ripe-geo distribution to be available |                                                   |
 | `default`             | ✓ | `maxminddb`, `ripe-geo-autoupdate`                            | Default feature set, adds no functionality itself                                                               |
 | `full`                | | `maxminddb`, `ripe-geo-autoupdate`, `ripe-geo-embedded`       | Activates all features, adds no functionality itself                                                            |
 
@@ -70,7 +70,7 @@ path = "<PATH>" # .mmdb geolite2 file, get it from https://dev.maxmind.com
 
 # Options for type = "ripe-geo"
 # The database can be loaded from directory (if path option specified), from embedded (compile-time
-# feature=ripe-gep-embedded required) or downloaded (if autoupdate option is not false) automatically
+# feature=ripe-gep-embedded required) or downloaded (if autoupdate option is not false) version automatically
 path = "<PATH>" # "continents" folder of ripe-geo database, get it from https://github.com/cbuijs/ripe-geo
 overlaps = "skip" # ripe-geo database has overlaping IP ranges, the default is to ignore it with "skip" value
 autoupdate = false # Whether to automatically download and update the database
