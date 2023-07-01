@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Minimum supported Rust version 1.60 -> 1.64
 
 ### Deprecated
 
