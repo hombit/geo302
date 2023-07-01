@@ -2,7 +2,7 @@
 name = "geo302"
 version = "0.2.1"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.64"
 description = "A simple geoIP-based redirect proxy"
 readme = "README.md"
 license = "MIT"

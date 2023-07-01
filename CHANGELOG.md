@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
---
+- Minimum supported Rust version 1.60 -> 1.64
 
 ### Deprecated
 
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
---
+- `openssl` 0.10.48 -> 0.10.55 in `Cargo.lock` for [RUSTSEC-2023-0044](https://rustsec.org/advisories/RUSTSEC-2023-0044.html)
 
 ## [0.2.1] 2023-01-23
 
