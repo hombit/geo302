@@ -50,7 +50,7 @@ log = { version = "0.4", default_features = false, features = ["std", "serde"] }
 maxminddb = { version = "0.23", default_features = false, features = ["unsafe-str-decode"], optional = true }
 serde = { version = "1.0", default_features = false, features = ["derive"] }
 simple_logger = { version = "4.0", default-features = false }
-smallvec = { version = "1.9", default_features = false, features = ["union"]}
+smallvec = { version = "1.11", default_features = false, features = ["union"]}
 tar = { version = "0.4", default_features = false, optional = true }
 thiserror = "1"
 tokio = { version = "1", default_features = false, features = ["rt", "macros", "time"] }
