@@ -14,8 +14,7 @@ The main use case of `geo302` is redirecting a user to the closest server to min
 
 ## Geo-IP databases
 
-`geo302` supports two databases: proprietary [Maxmind DB](https://dev.maxmind.com) (IPinfo [provides its database](https://ipinfo.io/developers/ip-to-country-asn-database) in the same MMDB format)
-and [ripe-geo](https://github.com/cbuijs/ripe-geo) based on RIPE, GEONAMES and IPDENY.
+`geo302` supports two databases: proprietary [Maxmind DB](https://dev.maxmind.com) based on RIPE, GEONAMES and IPDENY.
 A fork of the ripe-geo database is available as a git submodule of this repository,
 the binary may be built with this database embedded into the executable.
 `geo302` also supports automatically updates to the most recent version of this database.

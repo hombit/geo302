@@ -43,7 +43,12 @@ impl MaxMindDbGeo {
 
 impl GeoTrait for MaxMindDbGeo {
     fn try_lookup_continent(&self, address: IpAddr) -> Result<Continent, GeoError> {
-        let country: geoip2::Country = self.maxminddb_reader.lookup(address)?;
+        // map_err could be replaced with inspect_err when it is stable
+        // https://github.com/rust-lang/rust/issues/91345
+        let country: geoip2::Country = self.maxminddb_reader.lookup(address).map_err(|err| {
+            log::warn!("{:?}", err);
+            err
+        })?;
         let geo_name_id: GeoNameId = country
             .continent
             .ok_or(GeoError::ContinentUnknown)?
