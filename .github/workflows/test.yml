@@ -10,13 +10,13 @@ jobs:
   cargo-fmt:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: cargo fmt -- --check
 
   cargo-clippy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: actions/setup-python@v4
@@ -31,7 +31,7 @@ jobs:
   cargo-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: actions/setup-python@v4
@@ -46,7 +46,7 @@ jobs:
   msrv-cargo-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Get minimum supported Rust version
@@ -67,6 +67,6 @@ jobs:
   audit-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: cargo install cargo-audit
       - run: cargo audit
