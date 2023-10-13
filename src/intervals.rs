@@ -173,12 +173,7 @@ where
     K: Ord,
 {
     fn from(vecs: IntervalVec<K, V, S>) -> Self {
-        Self(
-            vecs.keys
-                .into_iter()
-                .zip(vecs.sizes_values.into_iter())
-                .collect(),
-        )
+        Self(vecs.keys.into_iter().zip(vecs.sizes_values).collect())
     }
 }
 
