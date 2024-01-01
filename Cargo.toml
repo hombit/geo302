@@ -38,7 +38,7 @@ default = ["maxminddb", "ripe-geo-autoupdate"]
 anyhow = "1"
 enum_dispatch = "0.3"
 flate2 = { version = "1", default_features = false, features = ["rust_backend"], optional = true }
-http-serde = "1.1"
+http-serde = "2.0"
 # http2 client wouldn't work until this is fixed:
 # https://github.com/hyperium/hyper-tls/pull/85
 # And we don't really need http2 server
